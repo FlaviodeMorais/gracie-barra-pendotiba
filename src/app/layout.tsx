@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Bebas_Neue } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import InstallPrompt from "@/components/public/InstallPrompt";
 import ServiceWorkerRegistrar from "@/components/public/ServiceWorkerRegistrar";
 
-const bebasNeue = Bebas_Neue({
-  weight: "400",
+const montserrat = Montserrat({
+  weight: ["800"],
   subsets: ["latin"],
-  variable: "--font-bebas",
+  variable: "--font-montserrat",
   display: "swap",
 });
 
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`h-full antialiased ${bebasNeue.variable}`}>
+    <html lang="pt-BR" className={`h-full antialiased ${montserrat.variable}`}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-TileColor" content="#dc2626" />

@@ -14,95 +14,114 @@ type Banner = {
 };
 
 export default function BannerCarousel({ banners }: { banners: Banner[] }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 5000 })]);
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, dragFree: true, align: "start" },
+    [Autoplay({ delay: 2800, stopOnInteraction: false, stopOnMouseEnter: true })]
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const scrollTo = useCallback((index: number) => emblaApi?.scrollTo(index), [emblaApi]);
+  const scrollTo = useCallback(
+    (index: number) => emblaApi?.scrollTo(index),
+    [emblaApi]
+  );
 
   useEffect(() => {
     if (!emblaApi) return;
-    emblaApi.on("select", () => setSelectedIndex(emblaApi.selectedScrollSnap()));
+    emblaApi.on("select", () =>
+      setSelectedIndex(emblaApi.selectedScrollSnap())
+    );
   }, [emblaApi]);
 
-  if (!banners.length) {
-    return (
-      <div className="relative h-[60vh] md:h-[80vh] bg-gradient-to-br from-gray-950 via-gray-900 to-red-950 flex items-center justify-center">
-        <div className="text-center text-white px-4">
-          <Image src="/logo-gracie-barra.jpg" alt="Logo" width={120} height={120} className="mx-auto rounded-full border-4 border-red-600 mb-6" />
-          <h1 className="text-4xl md:text-6xl font-black mb-4">GRACIE BARRA</h1>
-          <p className="text-red-400 text-xl md:text-2xl font-bold tracking-widest mb-2">PENDOTIBA</p>
-          <p className="text-gray-300 text-lg">Jiu-Jitsu & Defesa Pessoal</p>
-          <p className="text-gray-400 mt-2">Niterói - RJ</p>
-          <div className="mt-8 flex gap-4 justify-center flex-wrap">
-            <Link href="/agendar" className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-bold text-lg transition-all">
-              Agende sua Aula Grátis
-            </Link>
-            <Link href="#horarios-aula" className="border-2 border-white text-white hover:bg-white hover:text-gray-900 px-8 py-3 rounded-lg font-bold text-lg transition-all">
-              Ver Horários
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!banners.length) return null;
 
   return (
-    <div className="relative overflow-hidden" ref={emblaRef}>
-      <div className="flex">
-        {banners.map((banner) => (
-          <div key={banner.id} className="flex-none w-full relative h-[60vh] md:h-[80vh]">
-            <Image
-              src={banner.imageUrl}
-              alt={banner.title || "Banner"}
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            {(banner.title || banner.description) && (
-              <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 text-white">
-                {banner.title && <h2 className="text-3xl md:text-5xl font-black mb-2">{banner.title}</h2>}
-                {banner.description && <p className="text-lg md:text-xl text-gray-200">{banner.description}</p>}
-                {banner.linkUrl && (
-                  <Link href={banner.linkUrl} className="mt-4 inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold">
-                    Saiba mais
-                  </Link>
+    <div className="relative w-full bg-gray-950">
+      {/* Scroll container */}
+      <div className="overflow-hidden" ref={emblaRef}>
+        <div className="flex gap-1 sm:gap-1.5">
+          {banners.map((banner, i) => (
+            <div key={banner.id} className="embla-slide flex-shrink-0">
+              <div
+                className={`relative h-40 sm:h-52 md:h-64 overflow-hidden transition-all duration-300 ${
+                  i === selectedIndex ? "brightness-100" : "brightness-75"
+                }`}
+              >
+                <Image
+                  src={banner.imageUrl}
+                  alt={banner.title || "Banner"}
+                  fill
+                  className="object-cover object-center hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 480px) 75vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 22vw"
+                />
+
+                {/* Overlay com texto em todas as imagens */}
+                {(banner.title || banner.description) && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-3 sm:p-4">
+                    {banner.title && (
+                      <p className="text-white font-bold text-xs sm:text-sm leading-tight drop-shadow line-clamp-2">
+                        {banner.title}
+                      </p>
+                    )}
+                    {banner.description && (
+                      <p className="text-gray-300 text-xs mt-0.5 line-clamp-1 drop-shadow hidden sm:block">
+                        {banner.description}
+                      </p>
+                    )}
+                    {banner.linkUrl && (
+                      <Link
+                        href={banner.linkUrl}
+                        className="mt-2 inline-flex items-center bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs"
+                      >
+                        Ver mais
+                      </Link>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Arrows */}
+      <button
+        type="button"
+        onClick={() => emblaApi?.scrollPrev()}
+        aria-label="Anterior"
+        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/90 text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all z-10"
+      >
+        <svg width="16" height="16" className="block" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        onClick={() => emblaApi?.scrollNext()}
+        aria-label="Próximo"
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/90 text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all z-10"
+      >
+        <svg width="16" height="16" className="block" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+
+      {/* Dots */}
       {banners.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        <div className="flex justify-center gap-1.5 pt-2 pb-1">
           {banners.map((_, i) => (
             <button
+              type="button"
               key={i}
               onClick={() => scrollTo(i)}
-              className={`w-3 h-3 rounded-full transition-all ${i === selectedIndex ? "bg-red-500 scale-125" : "bg-white/50"}`}
+              aria-label={`Banner ${i + 1}`}
+              className={`rounded-full transition-all duration-300 ${
+                i === selectedIndex
+                  ? "bg-red-500 w-4 h-1.5"
+                  : "bg-gray-700 hover:bg-gray-500 w-1.5 h-1.5"
+              }`}
             />
           ))}
         </div>
-      )}
-      {banners.length > 1 && (
-        <>
-          <button
-            onClick={() => emblaApi?.scrollPrev()}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white p-2 rounded-full transition-all"
-          >
-            <svg width="24" height="24" className="block" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <button
-            onClick={() => emblaApi?.scrollNext()}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/70 text-white p-2 rounded-full transition-all"
-          >
-            <svg width="24" height="24" className="block" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </>
       )}
     </div>
   );

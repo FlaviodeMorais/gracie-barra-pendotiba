@@ -53,7 +53,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <div className="h-32 bg-gradient-to-br from-red-950/30 to-gray-950" />
         )}
 
-        <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="max-w-3xl mx-auto px-4 py-5 sm:py-8">
           {/* Back */}
           <Link href="/" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-white text-sm mb-6 transition-colors">
             <svg width="16" height="16" className="block flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -71,7 +71,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           </div>
 
           {/* Info grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5 sm:mb-6">
             {[
               { label: "Data", value: formatDateTime(event.date), icon: "📅" },
               { label: "Local", value: event.location, icon: "📍" },

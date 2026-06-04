@@ -37,13 +37,13 @@ export default async function AgendarPage() {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="lg:col-span-2 order-1">
             <TrialClassForm openDays={openDays} />
           </div>
 
-          <div className="space-y-4">
-            <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+          <div className="space-y-4 order-2">
+            <div className="bg-gray-900 rounded-2xl p-4 sm:p-6 border border-gray-800">
               <h3 className="text-white font-bold mb-4">Por que treinar conosco?</h3>
               <ul className="space-y-3 text-sm text-gray-400">
                 {[
@@ -62,7 +62,7 @@ export default async function AgendarPage() {
               </ul>
             </div>
 
-            <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+            <div className="bg-gray-900 rounded-2xl p-4 sm:p-6 border border-gray-800">
               <h3 className="text-white font-bold mb-3">Horários de Funcionamento</h3>
               <ul className="space-y-2 text-sm">
                 {hours.map((h) => (
