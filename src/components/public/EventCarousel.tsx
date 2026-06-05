@@ -32,12 +32,29 @@ export default function EventCarousel({ events }: { events: Event[] }) {
 
   const scrollTo = useCallback((i: number) => emblaApi?.scrollTo(i), [emblaApi]);
 
-  useEffect(() => {
+  const updateSelectedIndex = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  const updateScrollSnaps = useCallback(() => {
     if (!emblaApi) return;
     setScrollSnaps(emblaApi.scrollSnapList());
-    emblaApi.on("select", () => setSelectedIndex(emblaApi.selectedScrollSnap()));
-    emblaApi.on("reInit", () => setScrollSnaps(emblaApi.scrollSnapList()));
   }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    requestAnimationFrame(() => {
+      updateScrollSnaps();
+      updateSelectedIndex();
+    });
+    emblaApi.on("select", updateSelectedIndex);
+    emblaApi.on("reInit", updateScrollSnaps);
+    return () => {
+      emblaApi.off("select", updateSelectedIndex);
+      emblaApi.off("reInit", updateScrollSnaps);
+    };
+  }, [emblaApi, updateScrollSnaps, updateSelectedIndex]);
 
   return (
     <div>

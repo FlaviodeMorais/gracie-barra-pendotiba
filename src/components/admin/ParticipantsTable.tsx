@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BELTS, beltColor, formatCurrency, formatDateTime } from "@/lib/utils";
+import { beltColor, formatCurrency, formatDateTime } from "@/lib/utils";
 
 type Registration = {
   id: string;

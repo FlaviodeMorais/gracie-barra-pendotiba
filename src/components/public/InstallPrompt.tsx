@@ -15,42 +15,42 @@ export default function InstallPrompt() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Already dismissed this session
     if (sessionStorage.getItem("pwa-prompt-dismissed")) return;
 
-    // Check if already installed (standalone mode)
     if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsInstalled(true);
-      return;
+      const timer = setTimeout(() => setIsInstalled(true), 0);
+      return () => clearTimeout(timer);
     }
 
-    // iOS detection
     const ua = navigator.userAgent;
     const ios = /iphone|ipad|ipod/i.test(ua);
     const safari = /safari/i.test(ua) && !/chrome/i.test(ua);
     if (ios && safari) {
-      setIsIOS(true);
-      // Show iOS instructions after a short delay
-      const t = setTimeout(() => setShow(true), 3000);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => {
+        setIsIOS(true);
+        setShow(true);
+      }, 3000);
+      return () => clearTimeout(timer);
     }
 
-    // Android / Desktop — listen for beforeinstallprompt
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      const t = setTimeout(() => setShow(true), 3000);
-      return () => clearTimeout(t);
+    const handler = (event: Event) => {
+      event.preventDefault();
+      setDeferredPrompt(event as BeforeInstallPromptEvent);
+      setTimeout(() => setShow(true), 3000);
     };
-    window.addEventListener("beforeinstallprompt", handler);
 
-    // Listen for successful install
-    window.addEventListener("appinstalled", () => {
+    const appInstalledHandler = () => {
       setIsInstalled(true);
       setShow(false);
-    });
+    };
 
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", appInstalledHandler);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", appInstalledHandler);
+    };
   }, []);
 
   const handleInstall = async () => {

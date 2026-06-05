@@ -20,7 +20,21 @@ export default function BannersAdmin() {
     setBanners(await res.json());
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialBanners() {
+      const res = await fetch("/api/banners");
+      const data = await res.json();
+      if (!cancelled) setBanners(data);
+    }
+
+    void loadInitialBanners();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleUpload = async (file: File) => {
     setUploading(true);

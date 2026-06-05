@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { formatDate, formatCurrency, eventStatusLabel } from "@/lib/utils";
+import { formatDate, formatCurrency } from "@/lib/utils";
 
 type Event = {
   id: string;

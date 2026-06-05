@@ -103,13 +103,6 @@ export function generatePixPayload(
     return `${id}${value.length.toString().padStart(2, "0")}${value}`;
   }
 
-  const keyTypeMap: Record<string, string> = {
-    cpf: "CPF",
-    cnpj: "CNPJ",
-    email: "EMAIL",
-    phone: "TELEFONE",
-    random: "EVP",
-  };
   const guiValue = "BR.GOV.BCB.PIX";
   const keyField = field("01", pixKey);
   const descField = description ? field("02", description.substring(0, 72)) : "";

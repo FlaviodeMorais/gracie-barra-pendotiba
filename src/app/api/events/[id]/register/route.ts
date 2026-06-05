@@ -44,7 +44,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { searchParams } = new URL(req.url);
   const adminToken = req.cookies.get("admin_token")?.value;
   if (!adminToken) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
