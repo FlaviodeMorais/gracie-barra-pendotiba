@@ -24,6 +24,16 @@ html {
   font-family: var(--font-montserrat), sans-serif;
 }
 
+/* Esconde setas do banner no mobile — swipe é suficiente */
+.banner-arrow {
+  display: none;
+}
+@media (min-width: 768px) {
+  .banner-arrow {
+    display: flex;
+  }
+}
+
 /* Banner filmstrip — multiple slides visible at once */
 .embla-slide {
   flex: 0 0 75%;   /* mobile: ~1.3 visíveis */

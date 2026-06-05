@@ -89,7 +89,7 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
         type="button"
         onClick={() => emblaApi?.scrollPrev()}
         aria-label="Anterior"
-        className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/90 text-white w-10 h-10 rounded-full items-center justify-center transition-all z-10"
+        className="banner-arrow absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/90 text-white w-10 h-10 rounded-full items-center justify-center transition-all z-10"
       >
         <svg width="16" height="16" className="block" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />

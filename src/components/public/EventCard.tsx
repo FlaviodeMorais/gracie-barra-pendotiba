@@ -66,7 +66,7 @@ export default function EventCard({
       {/* ── Banner ───────────────────────────────────────────────── */}
       <div className="relative flex-shrink-0">
         {event.bannerUrl ? (
-          <div className="relative h-36 sm:h-44">
+          <div className="relative h-32 sm:h-44">
             <Image
               src={event.bannerUrl}
               alt={event.title}
@@ -100,27 +100,27 @@ export default function EventCard({
       </div>
 
       {/* ── Conteúdo ─────────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 p-4 gap-3 min-w-0">
+      <div className="flex flex-col flex-1 p-3 sm:p-4 gap-2 min-w-0">
 
-        {/* Título + descrição */}
-        <div className="min-w-0">
-          <h3 className="text-white font-bold text-base leading-snug group-hover:text-red-400 transition-colors line-clamp-2">
-            {event.title}
-          </h3>
-          {event.description && (
-            <p className="text-gray-500 text-xs mt-1 line-clamp-2 leading-relaxed">
-              {event.description}
-            </p>
-          )}
-        </div>
+        {/* Título */}
+        <h3 className="text-white font-bold text-sm sm:text-base leading-snug group-hover:text-red-400 transition-colors line-clamp-2">
+          {event.title}
+        </h3>
 
-        {/* Data + local */}
-        <div className="flex flex-col gap-1.5 text-xs text-gray-400">
-          <span className="flex items-center gap-2 min-w-0">
+        {/* Descrição — oculta no mobile para economizar espaço */}
+        {event.description && (
+          <p className="hidden sm:block text-gray-500 text-xs line-clamp-2 leading-relaxed">
+            {event.description}
+          </p>
+        )}
+
+        {/* Data + local — compacto */}
+        <div className="flex flex-col gap-1 text-xs text-gray-400">
+          <span className="flex items-center gap-1.5 min-w-0">
             <span className="text-red-500/70"><IconCalendar /></span>
-            <span className="truncate font-medium text-gray-300">{formatDate(event.date)}</span>
+            <span className="truncate text-gray-300">{formatDate(event.date)}</span>
           </span>
-          <span className="flex items-center gap-2 min-w-0">
+          <span className="flex items-center gap-1.5 min-w-0">
             <span className="text-red-500/70"><IconPin /></span>
             <span className="truncate">{event.location}</span>
           </span>
@@ -128,34 +128,31 @@ export default function EventCard({
 
         {/* Alerta vagas */}
         {!past && spotsLeft !== null && spotsLeft > 0 && spotsLeft <= 10 && (
-          <div className="flex items-center gap-1.5 bg-orange-950/40 border border-orange-800/40 rounded-lg px-2.5 py-1.5">
-            <span className="text-orange-400 text-xs">⚡</span>
-            <span className="text-orange-400 text-xs font-semibold">
-              Últimas {spotsLeft} vaga{spotsLeft > 1 ? "s" : ""}!
-            </span>
-          </div>
+          <p className="text-orange-400 text-xs font-semibold">
+            ⚡ Últimas {spotsLeft} vaga{spotsLeft > 1 ? "s" : ""}!
+          </p>
         )}
 
-        {/* Rodapé: preço + botão */}
-        <div className="mt-auto pt-3 border-t border-gray-800/80 flex items-center justify-between gap-3">
+        {/* Rodapé: preço + botão — sempre visível */}
+        <div className="mt-auto pt-2 border-t border-gray-800/80 flex items-center justify-between gap-2">
           <div className="min-w-0">
             {event.price > 0 ? (
-              <p className="text-white font-black text-base">{formatCurrency(event.price)}</p>
+              <p className="text-white font-black text-sm sm:text-base">{formatCurrency(event.price)}</p>
             ) : (
-              <p className="text-green-400 font-bold text-sm">Gratuito</p>
+              <p className="text-green-400 font-bold text-xs sm:text-sm">Gratuito</p>
             )}
             <p className="text-gray-600 text-xs">{count} inscrito{count !== 1 ? "s" : ""}</p>
           </div>
 
           {!past && (
-            <span className={`flex-shrink-0 text-xs font-bold px-4 py-2.5 rounded-xl transition-all min-h-[40px] flex items-center ${
+            <span className={`flex-shrink-0 text-xs font-bold px-3 sm:px-4 py-2.5 rounded-xl transition-all min-h-[40px] flex items-center whitespace-nowrap ${
               soldOut
                 ? "bg-gray-800 text-gray-500"
                 : canRegister
                 ? "bg-red-600 text-white group-hover:bg-red-500 shadow-lg shadow-red-900/30"
                 : "bg-gray-800 text-gray-400"
             }`}>
-              {soldOut ? "Esgotado" : canRegister ? "Inscrever-se →" : "Ver detalhes"}
+              {soldOut ? "Esgotado" : canRegister ? "Inscrever →" : "Ver"}
             </span>
           )}
         </div>
