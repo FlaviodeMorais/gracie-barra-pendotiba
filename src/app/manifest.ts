@@ -43,7 +43,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: "Eventos",
         short_name: "Eventos",
         description: "Ver próximos eventos e campeonatos",
-        url: "/eventos",
+        url: "/",
         icons: [{ src: "/icons/icon-96x96.png", sizes: "96x96" }],
       },
     ],

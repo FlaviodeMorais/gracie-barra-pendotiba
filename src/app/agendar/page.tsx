@@ -26,7 +26,7 @@ export default async function AgendarPage() {
   return (
     <>
       <Navbar settings={settings} />
-      <main className="min-h-screen bg-gray-950 pt-14 md:pt-16">
+      <main className="min-h-screen bg-gray-950 public-top-offset">
         <div className="border-b border-gray-800/60 bg-gray-950 px-4 py-6">
           <div className="max-w-4xl mx-auto flex items-center gap-3">
             <div className="w-1 h-8 bg-red-600 rounded-full flex-shrink-0" />

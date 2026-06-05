@@ -42,7 +42,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     <div className="min-h-screen bg-gray-950 flex flex-col">
       <Navbar settings={settings} />
 
-      <main className="flex-1 pt-14 md:pt-16">
+      <main className="flex-1 public-top-offset">
         {/* Banner */}
         {event.bannerUrl ? (
           <div className="relative h-52 md:h-72">

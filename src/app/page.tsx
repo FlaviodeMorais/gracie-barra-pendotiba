@@ -35,12 +35,12 @@ export default async function HomePage() {
     <div className="min-h-screen bg-gray-950 flex flex-col">
       <Navbar settings={settings} />
 
-      {/* Banner Carousel */}
-      {banners.length > 0 && (
-        <div className="pt-14 md:pt-16">
+      <div className="public-top-offset">
+        {/* Banner Carousel */}
+        {banners.length > 0 && (
           <BannerCarousel banners={banners} />
-        </div>
-      )}
+        )}
+      </div>
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pb-16 pt-6 md:pt-8">
 

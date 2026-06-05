@@ -30,7 +30,7 @@ export default function OfflinePage() {
           Agendar Aula (cache)
         </Link>
         <Link
-          href="/eventos"
+          href="/"
           className="flex items-center justify-center gap-2 w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium py-3 rounded-xl transition-all"
         >
           Eventos (cache)

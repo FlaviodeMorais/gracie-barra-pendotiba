@@ -1,15 +1,11 @@
 // Service Worker - Gracie Barra Pendotiba
-const CACHE_VERSION = "gb-v1";
+const CACHE_VERSION = "gb-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const API_CACHE = `${CACHE_VERSION}-api`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
-const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 
 const STATIC_ASSETS = [
-  "/",
   "/offline",
-  "/agendar",
-  "/eventos",
   "/manifest.webmanifest",
   "/logo-gracie-barra.jpg",
   "/apple-touch-icon.png",
@@ -88,7 +84,7 @@ self.addEventListener("fetch", (event) => {
   // HTML pages — network first, fallback to offline page
   if (request.headers.get("accept")?.includes("text/html")) {
     event.respondWith(
-      networkFirst(request, PAGE_CACHE, 3000).catch(() =>
+      fetch(request).catch(() =>
         caches.match("/offline").then((r) => r || new Response("Offline", { status: 503 }))
       )
     );
