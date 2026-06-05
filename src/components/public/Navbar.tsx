@@ -21,6 +21,15 @@ export default function Navbar({ settings = {} }: { settings?: Settings }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const standaloneNavigator = navigator as Navigator & { standalone?: boolean };
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      Boolean(standaloneNavigator.standalone);
+
+    document.documentElement.classList.toggle("pwa-standalone", isStandalone);
+  }, []);
+
   return (
     <nav
       className={`public-navbar fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -29,19 +38,19 @@ export default function Navbar({ settings = {} }: { settings?: Settings }) {
     >
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         {/* Main bar */}
-        <div className="flex items-center justify-between h-14 gap-4">
+        <div className="flex items-center justify-between h-14 gap-2 sm:gap-4">
 
           {/* Logo + info */}
           <Link href="/" className="flex items-center gap-3 min-w-0">
             <Image
               src="/logo-gracie-barra.jpg"
               alt="Gracie Barra Pendotiba"
-              width={36}
-              height={36}
-              className="rounded-full border-2 border-red-600 flex-shrink-0"
+              width={34}
+              height={34}
+              className="rounded-full border-2 border-red-600 flex-shrink-0 sm:w-9 sm:h-9"
             />
             <div className="min-w-0">
-              <p className="font-montserrat text-base sm:text-xl leading-none tracking-wide sm:tracking-wider text-white text-glow-white">
+              <p className="font-montserrat text-sm min-[390px]:text-base sm:text-xl leading-none tracking-normal sm:tracking-wider text-white text-glow-white truncate">
                 GRACIE BARRA PENDOTIBA
               </p>
               {address && (

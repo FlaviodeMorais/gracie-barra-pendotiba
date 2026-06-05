@@ -20,12 +20,16 @@ body {
 
 @media (display-mode: standalone) {
   :root {
-    --public-safe-top: max(env(safe-area-inset-top), 1.5rem);
+    --public-safe-top: max(env(safe-area-inset-top), 3rem);
   }
 
   body {
     padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+html.pwa-standalone {
+  --public-safe-top: max(env(safe-area-inset-top), 3rem);
 }
 
 .public-navbar {
