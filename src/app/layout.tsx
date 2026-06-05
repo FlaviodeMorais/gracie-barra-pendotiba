@@ -22,6 +22,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://gracie-barra-pendotiba.onrender.com"
+  ),
   applicationName: "Gracie Barra Pendotiba",
   title: {
     default: "Gracie Barra Pendotiba | Jiu-Jitsu & Defesa Pessoal - Niterói",
