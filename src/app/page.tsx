@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/public/Navbar";
 import Footer from "@/components/public/Footer";
-import EventCard from "@/components/public/EventCard";
 import WhatsAppButton from "@/components/public/WhatsAppButton";
 import BannerCarousel from "@/components/public/BannerCarousel";
+import EventCarousel from "@/components/public/EventCarousel";
+import EventCard from "@/components/public/EventCard";
 
 export const revalidate = 30;
 
@@ -46,16 +47,14 @@ export default async function HomePage() {
         {/* Open registrations */}
         {openEvents.length > 0 && (
           <section className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
-              <h2 className="text-white font-bold text-lg">Inscrições Abertas</h2>
-              <span className="ml-auto text-xs text-gray-500">{openEvents.length} evento{openEvents.length > 1 ? "s" : ""}</span>
+            <div className="flex items-center gap-2 mb-4 px-0">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <h2 className="text-white font-bold text-base">Inscrições Abertas</h2>
+              <span className="ml-auto text-xs text-gray-500">
+                {openEvents.length} evento{openEvents.length > 1 ? "s" : ""}
+              </span>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {openEvents.map((e) => (
-                <EventCard key={e.id} event={e} count={e._count.registrations} />
-              ))}
-            </div>
+            <EventCarousel events={openEvents} />
           </section>
         )}
 
@@ -63,14 +62,10 @@ export default async function HomePage() {
         {upcomingEvents.length > 0 && (
           <section className="mb-10">
             <div className="flex items-center gap-2 mb-4">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-              <h2 className="text-white font-bold text-lg">Em Breve</h2>
+              <span className="w-2 h-2 rounded-full bg-blue-400" />
+              <h2 className="text-white font-bold text-base">Em Breve</h2>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {upcomingEvents.map((e) => (
-                <EventCard key={e.id} event={e} count={e._count.registrations} />
-              ))}
-            </div>
+            <EventCarousel events={upcomingEvents} />
           </section>
         )}
 
