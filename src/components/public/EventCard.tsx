@@ -42,10 +42,12 @@ export default function EventCard({
   event,
   count,
   past = false,
+  priority = false,
 }: {
   event: Event;
   count: number;
   past?: boolean;
+  priority?: boolean;
 }) {
   const cfg = statusConfig[event.status] ?? statusConfig.closed;
   const spotsLeft = event.maxParticipants ? event.maxParticipants - count : null;
@@ -64,13 +66,14 @@ export default function EventCard({
       {/* ── Banner ───────────────────────────────────────────────── */}
       <div className="relative flex-shrink-0">
         {event.bannerUrl ? (
-          <div className="relative h-44 sm:h-48">
+          <div className="relative h-36 sm:h-44">
             <Image
               src={event.bannerUrl}
               alt={event.title}
               fill
+              priority={priority}
               className="object-cover group-hover:scale-105 transition-transform duration-500"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              sizes="(max-width: 640px) 82vw, (max-width: 1024px) 50vw, 33vw"
             />
             {/* Gradient mais dramático na parte inferior */}
             <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/20 to-transparent" />

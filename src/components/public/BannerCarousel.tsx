@@ -42,7 +42,7 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
           {banners.map((banner, i) => (
             <div key={banner.id} className="embla-slide flex-shrink-0">
               <div
-                className={`relative h-40 sm:h-52 md:h-64 overflow-hidden transition-all duration-300 ${
+                className={`relative h-32 sm:h-48 md:h-64 overflow-hidden transition-all duration-300 ${
                   i === selectedIndex ? "brightness-100" : "brightness-75"
                 }`}
               >
@@ -50,6 +50,7 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
                   src={banner.imageUrl}
                   alt={banner.title || "Banner"}
                   fill
+                  priority={i === 0}
                   className="object-cover object-center hover:scale-105 transition-transform duration-500"
                   sizes="(max-width: 480px) 75vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 22vw"
                 />
@@ -83,12 +84,12 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
         </div>
       </div>
 
-      {/* Arrows */}
+      {/* Arrows — desktop only via CSS (não renderiza no mobile) */}
       <button
         type="button"
         onClick={() => emblaApi?.scrollPrev()}
         aria-label="Anterior"
-        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/90 text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all z-10"
+        className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/90 text-white w-10 h-10 rounded-full items-center justify-center transition-all z-10"
       >
         <svg width="16" height="16" className="block" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
@@ -98,7 +99,7 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
         type="button"
         onClick={() => emblaApi?.scrollNext()}
         aria-label="Próximo"
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/90 text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all z-10"
+        className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/90 text-white w-10 h-10 rounded-full items-center justify-center transition-all z-10"
       >
         <svg width="16" height="16" className="block" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />

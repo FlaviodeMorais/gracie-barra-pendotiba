@@ -44,9 +44,9 @@ export default function EventCarousel({ events }: { events: Event[] }) {
       {/* Mobile: carousel | Desktop: grid */}
       <div className="sm:hidden overflow-hidden -mx-4" ref={emblaRef}>
         <div className="flex pl-4 gap-3">
-          {events.map((e) => (
+          {events.map((e, i) => (
             <div key={e.id} className="flex-none w-[82vw] max-w-[340px]">
-              <EventCard event={e} count={e._count.registrations} />
+              <EventCard event={e} count={e._count.registrations} priority={i === 0} />
             </div>
           ))}
           {/* Spacer final para o último card não ficar colado na borda */}
