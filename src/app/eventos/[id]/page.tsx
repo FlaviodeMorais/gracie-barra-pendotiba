@@ -131,7 +131,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             </div>
           </section>
 
-          <div className="mt-5 mx-auto max-w-xl">
+          <div className="mt-5">
             {canRegister ? (
               <EventRegistrationForm event={event} settings={settings} />
             ) : (
