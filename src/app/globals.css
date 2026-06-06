@@ -40,6 +40,18 @@ html.pwa-standalone {
   padding-top: calc(var(--public-nav-height) + var(--public-safe-top));
 }
 
+.admin-mobile-header {
+  padding-top: calc(0.625rem + var(--public-safe-top));
+}
+
+.admin-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.admin-mobile-content {
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+}
+
 @media (min-width: 768px) {
   :root {
     --public-nav-height: 4rem;

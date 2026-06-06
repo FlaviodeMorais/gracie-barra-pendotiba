@@ -93,7 +93,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Header mobile */}
-        <header className="lg:hidden bg-gray-900 border-b border-gray-800 px-3 py-2.5 flex items-center gap-3 sticky top-0 z-30">
+        <header className="admin-mobile-header lg:hidden bg-gray-900 border-b border-gray-800 px-3 py-2.5 flex items-center gap-3 sticky top-0 z-30">
           <button type="button" aria-label="Abrir menu" onClick={() => setSidebarOpen(true)}
             className="text-white p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-800">
             <svg width="20" height="20" className="block" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -110,12 +110,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Conteúdo */}
-        <main className="flex-1 p-4 md:p-6 overflow-auto pb-24 lg:pb-6">
+        <main className="admin-mobile-content flex-1 p-4 md:p-6 overflow-auto pb-24 lg:pb-6">
           {children}
         </main>
 
         {/* ── Bottom nav mobile ─────────────────────────────────── */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-gray-900 border-t border-gray-800 flex">
+        <nav className="admin-bottom-nav lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-gray-900 border-t border-gray-800 flex">
           {bottomNav.map((item) => {
             const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
             return (

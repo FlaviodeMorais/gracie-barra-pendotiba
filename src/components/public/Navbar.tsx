@@ -21,15 +21,6 @@ export default function Navbar({ settings = {} }: { settings?: Settings }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    const standaloneNavigator = navigator as Navigator & { standalone?: boolean };
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      Boolean(standaloneNavigator.standalone);
-
-    document.documentElement.classList.toggle("pwa-standalone", isStandalone);
-  }, []);
-
   return (
     <nav
       className={`public-navbar fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
