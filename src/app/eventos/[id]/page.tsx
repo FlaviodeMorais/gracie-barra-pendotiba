@@ -121,13 +121,13 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                 </div>
               )}
 
-              <div className="mt-5 border-t border-gray-800 pt-5">
-                <h2 className="mb-2 text-base font-bold text-white">Sobre o Evento</h2>
-                <p className="whitespace-pre-line text-sm leading-relaxed text-gray-300">{event.description}</p>
-                {event.address && (
-                  <p className="mt-3 text-sm leading-relaxed text-gray-500">📍 {event.address}</p>
-                )}
-              </div>
+              {event.address && (
+                <div className="mt-5 border-t border-gray-800 pt-5">
+                  <p className="text-sm leading-relaxed text-gray-500">
+                    <strong className="text-white">Local:</strong> 📍 {event.address}
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
