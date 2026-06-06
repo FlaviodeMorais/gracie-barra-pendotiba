@@ -81,14 +81,14 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           </div>
 
           <section className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
-            <div className="relative aspect-[16/9] w-full bg-gray-950">
+            <div className="relative h-48 w-full bg-gray-950 sm:h-56">
               {event.bannerUrl ? (
                 <Image
                   src={event.bannerUrl}
                   alt={event.title}
                   fill
                   priority
-                  className="object-cover object-[center_38%]"
+                  className="object-contain p-2"
                   sizes="(max-width: 768px) 100vw, 672px"
                 />
               ) : (
