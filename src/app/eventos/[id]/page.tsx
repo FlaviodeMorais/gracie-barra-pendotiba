@@ -98,17 +98,17 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             </div>
 
             <div className="p-4 sm:p-5">
-              <div className="grid grid-cols-1 rounded-lg border border-gray-800 bg-gray-950/45 sm:grid-cols-3">
+              <div className="grid grid-cols-3 overflow-hidden rounded-lg border border-gray-800 bg-gray-950/45">
                 {details.map((item) => (
                   <div
                     key={item.label}
-                    className="min-w-0 border-b border-gray-800 px-3 py-3 sm:border-b-0 sm:border-r sm:last:border-r-0"
+                    className="min-w-0 border-r border-gray-800 px-3 py-3 last:border-r-0"
                   >
-                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                    <p className="mb-1 flex min-w-0 items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                       <span className="mr-1 normal-case">{item.icon}</span>
-                      {item.label}
+                      <span className="truncate">{item.label}</span>
                     </p>
-                    <p className="truncate text-sm font-bold leading-snug text-white" title={item.value}>
+                    <p className="truncate text-xs font-bold leading-snug text-white sm:text-sm" title={item.value}>
                       {item.value}
                     </p>
                   </div>
