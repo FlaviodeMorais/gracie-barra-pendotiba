@@ -43,7 +43,6 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   const details = [
     { label: "Data", value: formatDateTime(event.date), icon: "📅" },
-    { label: "Local", value: event.location, icon: "📍" },
     {
       label: "Inscrição",
       value: event.price > 0 ? formatCurrency(event.price) : "Gratuito",
@@ -99,11 +98,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             </div>
 
             <div className="p-4 sm:p-5">
-              <div className="grid grid-cols-2 rounded-lg border border-gray-800 bg-gray-950/45 sm:grid-cols-4">
+              <div className="grid grid-cols-1 rounded-lg border border-gray-800 bg-gray-950/45 sm:grid-cols-3">
                 {details.map((item) => (
                   <div
                     key={item.label}
-                    className="min-w-0 border-b border-gray-800 px-3 py-3 odd:border-r sm:border-b-0 sm:border-r sm:last:border-r-0"
+                    className="min-w-0 border-b border-gray-800 px-3 py-3 sm:border-b-0 sm:border-r sm:last:border-r-0"
                   >
                     <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
                       <span className="mr-1 normal-case">{item.icon}</span>
