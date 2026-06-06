@@ -5,13 +5,16 @@ import Footer from "@/components/public/Footer";
 import EventRegistrationForm from "@/components/public/EventRegistrationForm";
 import Image from "next/image";
 import Link from "next/link";
-import { formatDateTime, eventStatusLabel, formatCurrency } from "@/lib/utils";
+import { eventStatusLabel, formatCurrency, formatDateTime } from "@/lib/utils";
 
 export const revalidate = 30;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const event = await prisma.event.findUnique({ where: { id }, select: { title: true, description: true } });
+  const event = await prisma.event.findUnique({
+    where: { id },
+    select: { title: true, description: true },
+  });
   if (!event) return {};
   return { title: event.title, description: event.description.slice(0, 160) };
 }
@@ -29,7 +32,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   if (!event) notFound();
 
   const settings: Record<string, string> = {};
-  settingsArr.forEach((s) => (settings[s.key] = s.value));
+  settingsArr.forEach((setting) => (settings[setting.key] = setting.value));
 
   const status = eventStatusLabel(event.status);
   const spotsLeft = event.maxParticipants
@@ -38,88 +41,108 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const soldOut = spotsLeft !== null && spotsLeft <= 0;
   const canRegister = event.registrationOpen && !soldOut;
 
+  const details = [
+    { label: "Data", value: formatDateTime(event.date), icon: "📅" },
+    { label: "Local", value: event.location, icon: "📍" },
+    {
+      label: "Inscrição",
+      value: event.price > 0 ? formatCurrency(event.price) : "Gratuito",
+      icon: event.price > 0 ? "💰" : "✅",
+    },
+    {
+      label: "Inscritos",
+      value: `${event._count.registrations}${event.maxParticipants ? ` / ${event.maxParticipants}` : ""}`,
+      icon: "👥",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
       <Navbar settings={settings} />
 
       <main className="flex-1 public-top-offset">
-        {/* Banner */}
-        {event.bannerUrl ? (
-          <div className="relative h-52 md:h-72">
-            <Image src={event.bannerUrl} alt={event.title} fill className="object-cover" priority />
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
-          </div>
-        ) : (
-          <div className="h-32 bg-gradient-to-br from-red-950/30 to-gray-950" />
-        )}
-
-        <div className="max-w-3xl mx-auto px-4 py-5 sm:py-8">
-          {/* Back */}
-          <Link href="/" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-white text-sm mb-6 transition-colors">
+        <div className="max-w-2xl mx-auto px-4 py-5 sm:py-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-gray-500 hover:text-white text-sm mb-5 transition-colors"
+          >
             <svg width="16" height="16" className="block flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Todos os eventos
           </Link>
 
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3 flex-wrap mb-6">
-            <h1 className="text-2xl md:text-3xl font-black text-white flex-1">{event.title}</h1>
-            <span className={`text-xs px-3 py-1.5 rounded-full font-semibold flex-shrink-0 ${status.color}`}>
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <h1 className="min-w-0 flex-1 text-2xl font-black leading-tight text-white md:text-3xl">
+              {event.title}
+            </h1>
+            <span className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${status.color}`}>
               {status.label}
             </span>
           </div>
 
-          {/* Info grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5 sm:mb-6">
-            {[
-              { label: "Data", value: formatDateTime(event.date), icon: "📅" },
-              { label: "Local", value: event.location, icon: "📍" },
-              { label: "Inscrição", value: event.price > 0 ? formatCurrency(event.price) : "Gratuito", icon: event.price > 0 ? "💰" : "✅" },
-              {
-                label: "Inscritos",
-                value: `${event._count.registrations}${event.maxParticipants ? ` / ${event.maxParticipants}` : ""}`,
-                icon: "👥",
-              },
-            ].map((item) => (
-              <div key={item.label} className="bg-gray-900 rounded-xl p-3 border border-gray-800">
-                <p className="text-gray-500 text-xs mb-1">{item.icon} {item.label}</p>
-                <p className="text-white text-sm font-semibold leading-snug">{item.value}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Spots warning */}
-          {spotsLeft !== null && spotsLeft > 0 && spotsLeft <= 10 && (
-            <div className="bg-orange-950/40 border border-orange-800/50 rounded-xl px-4 py-2.5 mb-4 text-orange-400 text-sm font-semibold">
-              ⚡ Apenas {spotsLeft} vaga{spotsLeft > 1 ? "s" : ""} restante{spotsLeft > 1 ? "s" : ""}!
+          <section className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
+            <div className="relative aspect-[16/9] w-full bg-gray-950">
+              {event.bannerUrl ? (
+                <Image
+                  src={event.bannerUrl}
+                  alt={event.title}
+                  fill
+                  priority
+                  className="object-cover object-[center_38%]"
+                  sizes="(max-width: 768px) 100vw, 672px"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.24),transparent_42%),linear-gradient(135deg,#111827,#030712)]" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-950/65 via-transparent to-transparent" />
             </div>
-          )}
 
-          {/* Description */}
-          <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 mb-6">
-            <h2 className="text-white font-bold mb-3">Sobre o Evento</h2>
-            <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">{event.description}</p>
-            {event.address && (
-              <p className="text-gray-500 text-xs mt-3">📍 {event.address}</p>
+            <div className="p-4 sm:p-5">
+              <div className="divide-y divide-gray-800 rounded-lg border border-gray-800 bg-gray-950/45">
+                {details.map((item) => (
+                  <div key={item.label} className="grid grid-cols-[108px_1fr] gap-3 px-3 py-3 sm:grid-cols-[132px_1fr]">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      <span className="mr-1 normal-case">{item.icon}</span>
+                      {item.label}
+                    </p>
+                    <p className="text-sm font-semibold leading-snug text-white">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {spotsLeft !== null && spotsLeft > 0 && spotsLeft <= 10 && (
+                <div className="mt-4 rounded-lg border border-orange-800/50 bg-orange-950/40 px-3 py-2.5 text-sm font-semibold text-orange-300">
+                  ⚡ Apenas {spotsLeft} vaga{spotsLeft > 1 ? "s" : ""} restante{spotsLeft > 1 ? "s" : ""}!
+                </div>
+              )}
+
+              <div className="mt-5 border-t border-gray-800 pt-5">
+                <h2 className="mb-2 text-base font-bold text-white">Sobre o Evento</h2>
+                <p className="whitespace-pre-line text-sm leading-relaxed text-gray-300">{event.description}</p>
+                {event.address && (
+                  <p className="mt-3 text-sm leading-relaxed text-gray-500">📍 {event.address}</p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <div className="mt-5 mx-auto max-w-xl">
+            {canRegister ? (
+              <EventRegistrationForm event={event} settings={settings} />
+            ) : (
+              <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 text-center">
+                <p className="mb-3 text-3xl">{soldOut ? "😔" : "🔒"}</p>
+                <p className="font-bold text-white">
+                  {soldOut ? "Vagas esgotadas" : "Inscrições encerradas"}
+                </p>
+                <p className="mt-1 text-sm text-gray-500">Fique atento para os próximos eventos!</p>
+                <Link href="/" className="mt-4 inline-block text-sm text-red-400 hover:underline">
+                  Ver outros eventos
+                </Link>
+              </div>
             )}
           </div>
-
-          {/* Registration */}
-          {canRegister ? (
-            <EventRegistrationForm event={event} settings={settings} />
-          ) : (
-            <div className="bg-gray-900 rounded-xl p-8 border border-gray-800 text-center">
-              <p className="text-3xl mb-3">{soldOut ? "😔" : "🔒"}</p>
-              <p className="text-white font-bold">
-                {soldOut ? "Vagas esgotadas" : "Inscrições encerradas"}
-              </p>
-              <p className="text-gray-500 text-sm mt-1">Fique atento para os próximos eventos!</p>
-              <Link href="/" className="mt-4 inline-block text-red-400 hover:underline text-sm">
-                Ver outros eventos
-              </Link>
-            </div>
-          )}
         </div>
       </main>
 

@@ -150,36 +150,35 @@ export default function EventRegistrationForm({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-3.5">
-        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-gray-300" htmlFor="reg-name">
-              Nome Completo *
-            </label>
-            <input
-              id="reg-name"
-              required
-              autoComplete="name"
-              value={form.name}
-              onChange={(changeEvent) => setForm({ ...form, name: changeEvent.target.value })}
-              placeholder="Seu nome completo"
-              className={inputCls}
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-gray-300" htmlFor="reg-email">
-              Email *
-            </label>
-            <input
-              id="reg-email"
-              required
-              type="email"
-              autoComplete="email"
-              value={form.email}
-              onChange={(changeEvent) => setForm({ ...form, email: changeEvent.target.value })}
-              placeholder="seu@email.com"
-              className={inputCls}
-            />
-          </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-gray-300" htmlFor="reg-name">
+            Nome Completo *
+          </label>
+          <input
+            id="reg-name"
+            required
+            autoComplete="name"
+            value={form.name}
+            onChange={(changeEvent) => setForm({ ...form, name: changeEvent.target.value })}
+            placeholder="Seu nome completo"
+            className={inputCls}
+          />
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-gray-300" htmlFor="reg-email">
+            Email *
+          </label>
+          <input
+            id="reg-email"
+            required
+            type="email"
+            autoComplete="email"
+            value={form.email}
+            onChange={(changeEvent) => setForm({ ...form, email: changeEvent.target.value })}
+            placeholder="seu@email.com"
+            className={inputCls}
+          />
         </div>
 
         <div>
