@@ -23,11 +23,16 @@ type EventData = {
 const empty: EventData = {
   title: "", description: "", bannerUrl: "", date: "", endDate: "",
   location: "", address: "", status: "upcoming", registrationOpen: true,
-  price: "0", pixKey: "", pixKeyType: "email", maxParticipants: "",
+  price: "0", pixKey: "", pixKeyType: "phone", maxParticipants: "",
 };
 
-export default function EventForm({ initial }: { initial?: EventData & { id?: string } }) {
-  const [form, setForm] = useState<EventData>(initial || empty);
+export default function EventForm({ initial, defaultPixKey, defaultPixKeyType }: {
+  initial?: EventData & { id?: string };
+  defaultPixKey?: string;
+  defaultPixKeyType?: string;
+}) {
+  const defaults = { ...empty, pixKey: defaultPixKey ?? "", pixKeyType: defaultPixKeyType ?? "phone" };
+  const [form, setForm] = useState<EventData>(initial || defaults);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
