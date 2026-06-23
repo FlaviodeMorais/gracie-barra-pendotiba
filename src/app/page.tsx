@@ -27,9 +27,22 @@ async function getData() {
 export default async function HomePage() {
   const { events, settings, banners } = await getData();
 
-  const openEvents = events.filter((e) => e.status === "open");
-  const upcomingEvents = events.filter((e) => e.status === "upcoming");
-  const closedEvents = events.filter((e) => ["closed", "finished"].includes(e.status));
+  const now = new Date();
+
+  // Deriva status automaticamente pela data — ignora o campo do banco
+  const classified = events.map((e) => {
+    const isPast = new Date(e.date) < now;
+    const derivedStatus = isPast
+      ? "finished"
+      : e.registrationOpen
+      ? "open"
+      : "upcoming";
+    return { ...e, status: derivedStatus };
+  });
+
+  const openEvents = classified.filter((e) => e.status === "open");
+  const upcomingEvents = classified.filter((e) => e.status === "upcoming");
+  const closedEvents = classified.filter((e) => e.status === "finished");
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
@@ -62,8 +75,11 @@ export default async function HomePage() {
         {upcomingEvents.length > 0 && (
           <section className="mb-10">
             <div className="flex items-center gap-2 mb-4">
-              <span className="w-2 h-2 rounded-full bg-blue-400" />
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
               <h2 className="text-white font-bold text-base">Em Breve</h2>
+              <span className="ml-auto text-xs text-gray-500">
+                {upcomingEvents.length} evento{upcomingEvents.length > 1 ? "s" : ""}
+              </span>
             </div>
             <EventCarousel events={upcomingEvents} />
           </section>
@@ -91,7 +107,7 @@ export default async function HomePage() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 opacity-50">
               {closedEvents.map((e) => (
-                <EventCard key={e.id} event={e} count={e._count.registrations} past />
+                <EventCard key={e.id} event={{ ...e, date: new Date(e.date) }} count={e._count.registrations} past />
               ))}
             </div>
           </section>
