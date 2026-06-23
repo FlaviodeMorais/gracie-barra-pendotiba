@@ -99,7 +99,7 @@ export default function EventRegistrationForm({
             <div className="mb-4 space-y-1 text-sm text-gray-400">
               <p>{registration.adults} adulto{registration.adults > 1 ? "s" : ""} × {formatCurrency(event.price)} = <strong className="text-white">{formatCurrency(registration.totalAmount)}</strong></p>
               {registration.children > 0 && (
-                <p>{registration.children} criança{registration.children > 1 ? "s" : ""} (até 14 anos) — <span className="text-green-400 font-semibold">Gratuito</span></p>
+                <p>{registration.children} criança{registration.children > 1 ? "s" : ""} (até 12 anos) — <span className="text-green-400 font-semibold">Gratuito</span></p>
               )}
             </div>
             <div className="mb-4 flex justify-center">
@@ -151,7 +151,7 @@ export default function EventRegistrationForm({
             <p className="text-sm font-semibold leading-tight text-red-400">
               Taxa: <strong className="text-white">{formatCurrency(event.price)} por adulto</strong>
             </p>
-            <p className="mt-0.5 text-xs text-gray-500">Crianças até 14 anos: entrada gratuita. Pagamento via PIX após a inscrição.</p>
+            <p className="mt-0.5 text-xs text-gray-500">Crianças até 12 anos: entrada gratuita. Pagamento via PIX após a inscrição.</p>
           </div>
         </div>
       )}
@@ -230,7 +230,7 @@ export default function EventRegistrationForm({
 
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm text-gray-300 font-medium">Crianças <span className="text-gray-500">(até 14 anos)</span></p>
+              <p className="text-sm text-gray-300 font-medium">Crianças <span className="text-gray-500">(até 12 anos)</span></p>
               <p className="text-xs text-green-400">Entrada gratuita</p>
             </div>
             <div className="flex items-center gap-3">
