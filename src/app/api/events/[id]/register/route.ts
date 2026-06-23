@@ -15,11 +15,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Inscrições encerradas" }, { status: 400 });
     }
     if (event.maxParticipants) {
-      const count = await prisma.eventRegistration.aggregate({
+      const registrations = await prisma.eventRegistration.findMany({
         where: { eventId: id },
-        _sum: { adults: true },
+        select: { adults: true },
       });
-      const occupied = count._sum.adults ?? 0;
+      const occupied = registrations.reduce((sum, r) => sum + r.adults, 0);
       if (occupied + adults > event.maxParticipants) {
         const available = event.maxParticipants - occupied;
         return NextResponse.json(
