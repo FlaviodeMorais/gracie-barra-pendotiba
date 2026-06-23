@@ -117,7 +117,7 @@ export default function EventForm({ initial }: { initial?: EventData & { id?: st
         </div>
         <div>
           <label className="block text-sm text-gray-300 mb-1">Vagas Máximas</label>
-          <input type="number" value={form.maxParticipants} onChange={(e) => f("maxParticipants", e.target.value)}
+          <input type="number" min="1" value={form.maxParticipants} onChange={(e) => f("maxParticipants", e.target.value)}
             placeholder="Ilimitado se vazio"
             className="w-full bg-gray-950 text-white border border-gray-700 rounded-lg px-4 py-2.5 focus:outline-none focus:border-red-600" />
         </div>
