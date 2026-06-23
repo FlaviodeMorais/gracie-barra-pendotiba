@@ -14,3 +14,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Erro ao atualizar" }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSessionFromRequest(req);
+  if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  const { id } = await params;
+  try {
+    await prisma.trialClass.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Erro ao excluir" }, { status: 500 });
+  }
+}

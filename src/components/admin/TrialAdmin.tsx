@@ -38,6 +38,12 @@ export default function TrialAdmin({ trials }: { trials: Trial[] }) {
     router.refresh();
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Excluir esta aula teste?")) return;
+    await fetch(`/api/trial/${id}`, { method: "DELETE" });
+    router.refresh();
+  };
+
   const counts = { all: trials.length, pending: 0, confirmed: 0, cancelled: 0, completed: 0 };
   trials.forEach((t) => { counts[t.status as keyof typeof counts] = (counts[t.status as keyof typeof counts] || 0) + 1; });
 
@@ -97,6 +103,10 @@ export default function TrialAdmin({ trials }: { trials: Trial[] }) {
                     className="bg-green-900/30 hover:bg-green-800/50 text-green-500 px-3 py-1.5 rounded-lg text-xs">
                     WhatsApp
                   </a>
+                  <button type="button" onClick={() => handleDelete(t.id)}
+                    className="bg-gray-800 hover:bg-red-950/50 text-gray-500 hover:text-red-400 px-3 py-1.5 rounded-lg text-xs transition-colors">
+                    Excluir
+                  </button>
                 </div>
               </div>
             </div>
