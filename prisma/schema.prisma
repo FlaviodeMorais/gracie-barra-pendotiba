@@ -57,6 +57,9 @@ model EventRegistration {
   phone         String
   belt          String   @default("branca")
   academy       String?
+  adults        Int      @default(1)
+  children      Int      @default(0)
+  totalAmount   Float    @default(0)
   paid          Boolean  @default(false)
   paymentStatus String   @default("pending")
   pixTxId       String?

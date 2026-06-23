@@ -6,15 +6,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   try {
     const data = await req.json();
+    const adults = Math.max(1, parseInt(data.adults) || 1);
+    const children = Math.max(0, parseInt(data.children) || 0);
+
     const event = await prisma.event.findUnique({ where: { id } });
     if (!event) return NextResponse.json({ error: "Evento não encontrado" }, { status: 404 });
     if (!event.registrationOpen) {
       return NextResponse.json({ error: "Inscrições encerradas" }, { status: 400 });
     }
     if (event.maxParticipants) {
-      const count = await prisma.eventRegistration.count({ where: { eventId: id } });
-      if (count >= event.maxParticipants) {
-        return NextResponse.json({ error: "Vagas esgotadas" }, { status: 400 });
+      const count = await prisma.eventRegistration.aggregate({
+        where: { eventId: id },
+        _sum: { adults: true },
+      });
+      const occupied = count._sum.adults ?? 0;
+      if (occupied + adults > event.maxParticipants) {
+        const available = event.maxParticipants - occupied;
+        return NextResponse.json(
+          { error: available <= 0 ? "Vagas esgotadas" : `Apenas ${available} vaga${available > 1 ? "s" : ""} disponível${available > 1 ? "is" : ""}` },
+          { status: 400 }
+        );
       }
     }
     const existing = await prisma.eventRegistration.findFirst({
@@ -23,6 +34,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (existing) {
       return NextResponse.json({ error: "Email já cadastrado neste evento" }, { status: 400 });
     }
+
+    const totalAmount = event.price * adults;
+
     const registration = await prisma.eventRegistration.create({
       data: {
         eventId: id,
@@ -31,8 +45,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         phone: data.phone,
         belt: data.belt || "branca",
         academy: data.academy || null,
+        adults,
+        children,
+        totalAmount,
         notes: data.notes || null,
-        pixTxId: event.price > 0 ? uuidv4().replace(/-/g, "").substring(0, 25) : null,
+        pixTxId: totalAmount > 0 ? uuidv4().replace(/-/g, "").substring(0, 25) : null,
       },
     });
     return NextResponse.json({ ...registration, event }, { status: 201 });
@@ -54,6 +71,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const stats = {
     total: registrations.length,
+    totalAdults: registrations.reduce((s, r) => s + r.adults, 0),
+    totalChildren: registrations.reduce((s, r) => s + r.children, 0),
     paid: registrations.filter((r) => r.paid).length,
     pending: registrations.filter((r) => !r.paid).length,
     checkedIn: registrations.filter((r) => r.checkedIn).length,

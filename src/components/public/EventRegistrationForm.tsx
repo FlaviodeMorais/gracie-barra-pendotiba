@@ -25,12 +25,16 @@ export default function EventRegistrationForm({
   settings: Settings;
 }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [registration, setRegistration] = useState<{ id: string; pixTxId: string | null } | null>(null);
+  const [registration, setRegistration] = useState<{ id: string; pixTxId: string | null; adults: number; children: number; totalAmount: number } | null>(null);
   const [qrCode, setQrCode] = useState("");
   const [pixPayload, setPixPayload] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const totalAmount = event.price * adults;
 
   const handleSubmit = async (submitEvent: React.FormEvent) => {
     submitEvent.preventDefault();
@@ -41,7 +45,7 @@ export default function EventRegistrationForm({
       const response = await fetch(`/api/events/${event.id}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, adults, children }),
       });
       const data = await response.json();
 
@@ -52,11 +56,11 @@ export default function EventRegistrationForm({
 
       setRegistration(data);
 
-      if (event.price > 0 && (event.pixKey || settings.pixKey)) {
+      if (data.totalAmount > 0 && (event.pixKey || settings.pixKey)) {
         const payload = generatePixPayload(
           event.pixKey || settings.pixKey,
-          event.pixKeyType || settings.pixKeyType || "email",
-          event.price,
+          event.pixKeyType || settings.pixKeyType || "phone",
+          data.totalAmount,
           settings.pixName || "Gracie Barra Pendotiba",
           settings.pixCity || "Niteroi",
           data.pixTxId || "GBPENDOTIBA",
@@ -89,12 +93,15 @@ export default function EventRegistrationForm({
           </p>
         </div>
 
-        {event.price > 0 && qrCode && (
+        {registration && registration.totalAmount > 0 && qrCode && (
           <div className="rounded-xl border border-gray-800 bg-gray-950 p-4 text-center sm:p-5">
             <h4 className="mb-1 text-base font-bold text-white">Pagamento via PIX</h4>
-            <p className="mb-4 text-sm text-gray-400">
-              Valor: <strong className="text-white">{formatCurrency(event.price)}</strong>
-            </p>
+            <div className="mb-4 space-y-1 text-sm text-gray-400">
+              <p>{registration.adults} adulto{registration.adults > 1 ? "s" : ""} × {formatCurrency(event.price)} = <strong className="text-white">{formatCurrency(registration.totalAmount)}</strong></p>
+              {registration.children > 0 && (
+                <p>{registration.children} criança{registration.children > 1 ? "s" : ""} (até 14 anos) — <span className="text-green-400 font-semibold">Gratuito</span></p>
+              )}
+            </div>
             <div className="mb-4 flex justify-center">
               <Image src={qrCode} alt="QR Code PIX" width={200} height={200} className="rounded-lg" />
             </div>
@@ -122,10 +129,10 @@ export default function EventRegistrationForm({
           </div>
         )}
 
-        {event.price === 0 && (
+        {registration && registration.totalAmount === 0 && (
           <div className="rounded-lg border border-green-800 bg-green-950/50 p-4 text-center">
             <p className="text-sm font-semibold text-green-400">
-              Evento gratuito! Apresente-se no local na data informada.
+              {event.price === 0 ? "Evento gratuito!" : "Nenhum valor a pagar."} Apresente-se no local na data informada.
             </p>
           </div>
         )}
@@ -142,9 +149,9 @@ export default function EventRegistrationForm({
           <span className="flex-shrink-0 text-base">💳</span>
           <div>
             <p className="text-sm font-semibold leading-tight text-red-400">
-              Taxa: <strong className="text-white">{formatCurrency(event.price)}</strong>
+              Taxa: <strong className="text-white">{formatCurrency(event.price)} por adulto</strong>
             </p>
-            <p className="mt-0.5 text-xs text-gray-500">Pagamento via PIX após a inscrição.</p>
+            <p className="mt-0.5 text-xs text-gray-500">Crianças até 14 anos: entrada gratuita. Pagamento via PIX após a inscrição.</p>
           </div>
         </div>
       )}
@@ -197,6 +204,62 @@ export default function EventRegistrationForm({
           />
         </div>
 
+        {/* Quantidade de participantes */}
+        <div className="rounded-xl border border-gray-700 bg-gray-950/60 p-4 space-y-4">
+          <p className="text-sm font-semibold text-white">Quantos vão participar?</p>
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-gray-300 font-medium">Adultos</p>
+              {event.price > 0 && (
+                <p className="text-xs text-gray-500">{formatCurrency(event.price)} cada</p>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setAdults(Math.max(1, adults - 1))}
+                className="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 text-white font-bold text-lg flex items-center justify-center transition-colors">
+                −
+              </button>
+              <span className="text-white font-bold text-lg w-6 text-center">{adults}</span>
+              <button type="button" onClick={() => setAdults(adults + 1)}
+                className="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 text-white font-bold text-lg flex items-center justify-center transition-colors">
+                +
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-gray-300 font-medium">Crianças <span className="text-gray-500">(até 14 anos)</span></p>
+              <p className="text-xs text-green-400">Entrada gratuita</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setChildren(Math.max(0, children - 1))}
+                className="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 text-white font-bold text-lg flex items-center justify-center transition-colors">
+                −
+              </button>
+              <span className="text-white font-bold text-lg w-6 text-center">{children}</span>
+              <button type="button" onClick={() => setChildren(children + 1)}
+                className="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 text-white font-bold text-lg flex items-center justify-center transition-colors">
+                +
+              </button>
+            </div>
+          </div>
+
+          {event.price > 0 && (
+            <div className="border-t border-gray-700 pt-3 flex items-center justify-between">
+              <div className="text-xs text-gray-500">
+                {adults} adulto{adults > 1 ? "s" : ""}
+                {children > 0 ? ` + ${children} criança${children > 1 ? "s" : ""}` : ""}
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500">Total</p>
+                <p className="text-lg font-black text-white">{formatCurrency(totalAmount)}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
         {error && (
           <div className="rounded-lg border border-red-700 bg-red-950/50 p-3 text-sm text-red-400">
             {error}
@@ -211,7 +274,7 @@ export default function EventRegistrationForm({
           {loading
             ? "Processando..."
             : event.price > 0
-            ? `Inscrever-se · ${formatCurrency(event.price)}`
+            ? `Inscrever-se · ${formatCurrency(totalAmount)}`
             : "Confirmar Inscrição Gratuita"}
         </button>
       </form>
