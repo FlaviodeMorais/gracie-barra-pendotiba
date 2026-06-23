@@ -38,6 +38,7 @@ export default function Navbar({ settings = {} }: { settings?: Settings }) {
               alt="Gracie Barra Pendotiba"
               width={34}
               height={34}
+              priority
               className="rounded-full border-2 border-red-600 flex-shrink-0 sm:w-9 sm:h-9"
             />
             <div className="min-w-0">
