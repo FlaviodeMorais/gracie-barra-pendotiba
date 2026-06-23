@@ -50,7 +50,7 @@ export default function BannerCarousel({ banners }: { banners: Banner[] }) {
                   src={banner.imageUrl}
                   alt={banner.title || "Banner"}
                   fill
-                  priority={i === 0}
+                  priority={i < 3}
                   className="object-cover object-center hover:scale-105 transition-transform duration-500"
                   sizes="(max-width: 480px) 75vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 22vw"
                 />
