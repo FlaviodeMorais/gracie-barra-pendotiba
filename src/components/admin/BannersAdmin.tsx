@@ -17,7 +17,7 @@ export default function BannersAdmin({ initialBanners }: { initialBanners: Banne
 
   const load = async () => {
     const res = await fetch("/api/banners");
-    setBanners(await res.json());
+    if (res.ok) setBanners(await res.json());
   };
 
   const handleUpload = async (file: File) => {
@@ -25,8 +25,9 @@ export default function BannersAdmin({ initialBanners }: { initialBanners: Banne
     const fd = new FormData();
     fd.append("file", file);
     const res = await fetch("/api/upload", { method: "POST", body: fd });
-    const data = await res.json();
     setUploading(false);
+    if (!res.ok) { alert("Erro ao fazer upload da imagem."); return; }
+    const data = await res.json();
     if (data.url) setForm((f) => ({ ...f, imageUrl: data.url }));
   };
 
@@ -34,8 +35,9 @@ export default function BannersAdmin({ initialBanners }: { initialBanners: Banne
     setSaving(true);
     const url = editing ? `/api/banners/${editing}` : "/api/banners";
     const method = editing ? "PUT" : "POST";
-    await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     setSaving(false);
+    if (!res.ok) { alert("Erro ao salvar o banner. Tente novamente."); return; }
     setForm(emptyForm);
     setEditing(null);
     setShowForm(false);
@@ -50,7 +52,8 @@ export default function BannersAdmin({ initialBanners }: { initialBanners: Banne
 
   const handleDelete = async (id: string) => {
     if (!confirm("Deletar este banner?")) return;
-    await fetch(`/api/banners/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/banners/${id}`, { method: "DELETE" });
+    if (!res.ok) { alert("Erro ao excluir o banner. Tente novamente."); return; }
     load();
   };
 

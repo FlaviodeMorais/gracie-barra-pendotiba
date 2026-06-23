@@ -30,17 +30,19 @@ export default function TrialAdmin({ trials }: { trials: Trial[] }) {
   const filtered = trials.filter((t) => filter === "all" || t.status === filter);
 
   const handleStatus = async (id: string, status: string) => {
-    await fetch(`/api/trial/${id}`, {
+    const res = await fetch(`/api/trial/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
+    if (!res.ok) { alert("Erro ao atualizar o status. Tente novamente."); return; }
     router.refresh();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Excluir esta aula teste?")) return;
-    await fetch(`/api/trial/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/trial/${id}`, { method: "DELETE" });
+    if (!res.ok) { alert("Erro ao excluir. Tente novamente."); return; }
     router.refresh();
   };
 
