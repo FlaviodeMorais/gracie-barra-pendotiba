@@ -103,14 +103,30 @@ export function generatePixPayload(
     return `${id}${value.length.toString().padStart(2, "0")}${value}`;
   }
 
+  function sanitize(str: string): string {
+    return str.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\x20-\x7E]/g, "");
+  }
+
+  function normalizePhone(key: string): string {
+    const digits = key.replace(/\D/g, "");
+    if (digits.startsWith("55") && digits.length >= 12) return `+${digits}`;
+    if (digits.length === 11 || digits.length === 10) return `+55${digits}`;
+    return key;
+  }
+
+  const normalizedKey = (pixKeyType === "phone" || pixKeyType === "celular")
+    ? normalizePhone(pixKey)
+    : pixKey;
+
   const guiValue = "BR.GOV.BCB.PIX";
-  const keyField = field("01", pixKey);
-  const descField = description ? field("02", description.substring(0, 72)) : "";
+  const keyField = field("01", normalizedKey);
+  const sanitizedDesc = description ? sanitize(description).substring(0, 72) : "";
+  const descField = sanitizedDesc ? field("02", sanitizedDesc) : "";
   const merchantAccountInfo = field("00", guiValue) + keyField + descField;
 
   const amountStr = amount.toFixed(2);
-  const sanitizedName = merchantName.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().substring(0, 25);
-  const sanitizedCity = merchantCity.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().substring(0, 15);
+  const sanitizedName = sanitize(merchantName).toUpperCase().substring(0, 25);
+  const sanitizedCity = sanitize(merchantCity).toUpperCase().substring(0, 15);
   const sanitizedTxId = txId.replace(/[^a-zA-Z0-9]/g, "").substring(0, 25) || "***";
 
   const addDataField = field("05", sanitizedTxId);
