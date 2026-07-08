@@ -8,17 +8,6 @@ export const DAYS_FULL = [
   "Sexta-feira",
   "Sábado",
 ];
-export const BELTS = [
-  "branca",
-  "cinza",
-  "amarela",
-  "laranja",
-  "verde",
-  "azul",
-  "roxa",
-  "marrom",
-  "preta",
-];
 export const MODALITIES = ["Jiu-Jitsu", "Muay Thai", "Defesa Pessoal", "Ginástica Artística"];
 export const LEVELS = ["Fundamentos", "Avançado", "Infantil", "Feminino", "Faixa Preta", "Todos"];
 
@@ -50,21 +39,6 @@ export function formatDateTime(date: string | Date) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(date));
-}
-
-export function beltColor(belt: string): string {
-  const colors: Record<string, string> = {
-    branca: "bg-white text-gray-800 border border-gray-300",
-    cinza: "bg-gray-400 text-white",
-    amarela: "bg-yellow-400 text-gray-800",
-    laranja: "bg-orange-500 text-white",
-    verde: "bg-green-600 text-white",
-    azul: "bg-blue-600 text-white",
-    roxa: "bg-purple-700 text-white",
-    marrom: "bg-amber-800 text-white",
-    preta: "bg-gray-900 text-white",
-  };
-  return colors[belt] || "bg-gray-200 text-gray-800";
 }
 
 export function eventStatusLabel(status: string): { label: string; color: string } {

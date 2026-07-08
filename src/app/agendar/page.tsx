@@ -3,18 +3,16 @@ import Footer from "@/components/public/Footer";
 import TrialClassForm from "@/components/public/TrialClassForm";
 import WhatsAppButton from "@/components/public/WhatsAppButton";
 import { prisma } from "@/lib/prisma";
+import { getPublicSettings } from "@/lib/settings";
 import { DAYS_FULL } from "@/lib/utils";
 
 export const revalidate = 3600;
 
 export default async function AgendarPage() {
-  const [settingsArr, hours] = await Promise.all([
-    prisma.siteSettings.findMany(),
+  const [settings, hours] = await Promise.all([
+    getPublicSettings(),
     prisma.operatingHours.findMany({ orderBy: { day: "asc" } }),
   ]);
-
-  const settings: Record<string, string> = {};
-  settingsArr.forEach((s) => (settings[s.key] = s.value));
 
   const openDays = hours.filter((h) => h.open).map((h) => ({
     day: h.day,

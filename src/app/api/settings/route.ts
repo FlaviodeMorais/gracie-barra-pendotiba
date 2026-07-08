@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromRequest } from "@/lib/auth";
+import { getAllSettings, getPublicSettings } from "@/lib/settings";
 
-export async function GET() {
-  const settings = await prisma.siteSettings.findMany();
-  const map: Record<string, string> = {};
-  settings.forEach((s) => (map[s.key] = s.value));
-  return NextResponse.json(map);
+export async function GET(req: NextRequest) {
+  const session = await getSessionFromRequest(req);
+  const settings = session ? await getAllSettings() : await getPublicSettings();
+  return NextResponse.json(settings);
 }
 
 export async function POST(req: NextRequest) {

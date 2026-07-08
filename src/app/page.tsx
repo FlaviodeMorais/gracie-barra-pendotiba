@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getPublicSettings } from "@/lib/settings";
 import Navbar from "@/components/public/Navbar";
 import Footer from "@/components/public/Footer";
 import WhatsAppButton from "@/components/public/WhatsAppButton";
@@ -9,17 +10,14 @@ import EventCard from "@/components/public/EventCard";
 export const revalidate = 30;
 
 async function getData() {
-  const [events, settingsArr, banners] = await Promise.all([
+  const [events, settings, banners] = await Promise.all([
     prisma.event.findMany({
       orderBy: [{ status: "asc" }, { date: "asc" }],
       include: { _count: { select: { registrations: true } } },
     }),
-    prisma.siteSettings.findMany(),
+    getPublicSettings(),
     prisma.banner.findMany({ where: { active: true }, orderBy: { order: "asc" } }),
   ]);
-
-  const settings: Record<string, string> = {};
-  settingsArr.forEach((s) => (settings[s.key] = s.value));
 
   return { events, settings, banners };
 }

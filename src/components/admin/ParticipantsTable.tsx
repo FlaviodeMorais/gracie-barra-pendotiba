@@ -1,14 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { beltColor, formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 type Registration = {
   id: string;
   name: string;
   email: string;
   phone: string;
-  belt: string;
   academy: string | null;
   paid: boolean;
   paymentStatus: string;
@@ -116,7 +115,6 @@ export default function ParticipantsTable({
                 <th className="px-4 py-3 text-left">Nome</th>
                 <th className="px-4 py-3 text-left hidden md:table-cell">Contato</th>
                 <th className="px-4 py-3 text-left hidden lg:table-cell">Evento</th>
-                <th className="px-4 py-3 text-left">Faixa</th>
                 <th className="px-4 py-3 text-center">Pagamento</th>
                 <th className="px-4 py-3 text-center">Check-in</th>
                 <th className="px-4 py-3 text-center">Ações</th>
@@ -137,11 +135,6 @@ export default function ParticipantsTable({
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <p className="text-gray-300 text-xs">{r.event.title}</p>
                     {r.event.price > 0 && <p className="text-gray-500 text-xs">{formatCurrency(r.event.price)}</p>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold capitalize ${beltColor(r.belt)}`}>
-                      {r.belt}
-                    </span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button

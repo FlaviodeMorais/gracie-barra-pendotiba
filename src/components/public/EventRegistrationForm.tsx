@@ -1,8 +1,6 @@
 "use client";
-import { useState } from "react";
-import { formatCurrency, generatePixPayload } from "@/lib/utils";
-import QRCode from "qrcode";
-import Image from "next/image";
+import { useState, useEffect } from "react";
+import { formatCurrency } from "@/lib/utils";
 
 type Event = {
   id: string;
@@ -33,8 +31,27 @@ export default function EventRegistrationForm({
   const [qrCode, setQrCode] = useState("");
   const [pixPayload, setPixPayload] = useState("");
   const [copied, setCopied] = useState(false);
+  const [paid, setPaid] = useState(false);
 
   const totalAmount = event.price * adults;
+
+  useEffect(() => {
+    if (!registration || registration.totalAmount === 0 || paid) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/registrations/${registration.id}/status`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.paid) {
+          setPaid(true);
+          clearInterval(interval);
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [registration, paid]);
 
   const handleSubmit = async (submitEvent: React.FormEvent) => {
     submitEvent.preventDefault();
@@ -56,18 +73,9 @@ export default function EventRegistrationForm({
 
       setRegistration(data);
 
-      if (data.totalAmount > 0 && (event.pixKey || settings.pixKey)) {
-        const payload = generatePixPayload(
-          event.pixKey || settings.pixKey,
-          event.pixKeyType || settings.pixKeyType || "phone",
-          data.totalAmount,
-          settings.pixName || "Gracie Barra Pendotiba",
-          settings.pixCity || "Niteroi",
-          data.pixTxId || "GBPENDOTIBA",
-          `Inscricao ${event.title}`
-        );
-        setPixPayload(payload);
-        setQrCode(await QRCode.toDataURL(payload, { errorCorrectionLevel: "M", width: 260 }));
+      if (data.totalAmount > 0 && data.mpPix?.qrCodeBase64) {
+        setPixPayload(data.mpPix.qrCode);
+        setQrCode(`data:image/png;base64,${data.mpPix.qrCodeBase64}`);
       }
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -93,7 +101,13 @@ export default function EventRegistrationForm({
           </p>
         </div>
 
-        {registration && registration.totalAmount > 0 && qrCode && (
+        {registration && registration.totalAmount > 0 && paid && (
+          <div className="rounded-lg border border-green-800 bg-green-950/50 p-4 text-center">
+            <p className="text-sm font-semibold text-green-400">✅ Pagamento confirmado! Nos vemos no evento.</p>
+          </div>
+        )}
+
+        {registration && registration.totalAmount > 0 && qrCode && !paid && (
           <div className="rounded-xl border border-gray-800 bg-gray-950 p-4 text-center sm:p-5">
             <h4 className="mb-1 text-base font-bold text-white">Pagamento via PIX</h4>
             <div className="mb-4 space-y-1 text-sm text-gray-400">
@@ -103,7 +117,8 @@ export default function EventRegistrationForm({
               )}
             </div>
             <div className="mb-4 flex justify-center">
-              <Image src={qrCode} alt="QR Code PIX" width={200} height={200} className="rounded-lg" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrCode} alt="QR Code PIX" width={200} height={200} className="rounded-lg" />
             </div>
             <p className="mb-2 text-xs text-gray-500">Ou copie o código Pix Copia e Cola:</p>
             <div className="flex gap-2">
@@ -123,8 +138,8 @@ export default function EventRegistrationForm({
                 {copied ? "✓ Copiado" : "Copiar"}
               </button>
             </div>
-            <p className="mt-3 text-xs leading-relaxed text-gray-600">
-              Após o pagamento, guarde o comprovante e apresente no dia do evento.
+            <p className="mt-3 text-xs leading-relaxed text-gray-600 animate-pulse">
+              Aguardando confirmação do pagamento...
             </p>
           </div>
         )}

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getPublicSettings } from "@/lib/settings";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/public/Navbar";
 import Footer from "@/components/public/Footer";
@@ -21,18 +22,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [event, settingsArr] = await Promise.all([
+  const [event, settings] = await Promise.all([
     prisma.event.findUnique({
       where: { id },
       include: { _count: { select: { registrations: true } } },
     }),
-    prisma.siteSettings.findMany(),
+    getPublicSettings(),
   ]);
 
   if (!event) notFound();
-
-  const settings: Record<string, string> = {};
-  settingsArr.forEach((setting) => (settings[setting.key] = setting.value));
 
   const status = eventStatusLabel(event.status);
   const spotsLeft = event.maxParticipants

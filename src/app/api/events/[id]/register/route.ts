@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
+import { createPixPayment } from "@/lib/mercadopago";
+import { getMpAccessToken } from "@/lib/settings";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -43,7 +45,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         name: data.name,
         email: data.email,
         phone: data.phone,
-        belt: data.belt || "branca",
         academy: data.academy || null,
         adults,
         children,
@@ -52,7 +53,32 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         pixTxId: totalAmount > 0 ? uuidv4().replace(/-/g, "").substring(0, 25) : null,
       },
     });
-    return NextResponse.json({ ...registration, event }, { status: 201 });
+
+    let mpPix: { qrCode: string; qrCodeBase64: string } | null = null;
+    const accessToken = await getMpAccessToken();
+    if (totalAmount > 0 && accessToken) {
+      try {
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+        const publicSiteUrl = siteUrl && /^https:\/\//.test(siteUrl) ? siteUrl : undefined;
+        const payment = await createPixPayment({
+          amount: totalAmount,
+          description: `Inscrição ${event.title}`.substring(0, 255),
+          payerEmail: data.email,
+          externalReference: registration.id,
+          notificationUrl: publicSiteUrl ? `${publicSiteUrl}/api/webhooks/mercadopago` : undefined,
+          accessToken,
+        });
+        await prisma.eventRegistration.update({
+          where: { id: registration.id },
+          data: { mpPaymentId: String(payment.id) },
+        });
+        mpPix = { qrCode: payment.qrCode, qrCodeBase64: payment.qrCodeBase64 };
+      } catch (mpError) {
+        console.error("Erro Mercado Pago:", mpError);
+      }
+    }
+
+    return NextResponse.json({ ...registration, event, mpPix }, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Erro ao realizar inscrição" }, { status: 500 });

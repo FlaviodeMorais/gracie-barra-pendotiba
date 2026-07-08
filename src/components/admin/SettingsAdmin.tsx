@@ -3,7 +3,9 @@ import { useState } from "react";
 
 type Settings = Record<string, string>;
 
-const fields = [
+type Field = { key: string; label: string; placeholder: string; sensitive?: boolean; hint?: string };
+
+const fields: { section: string; items: Field[] }[] = [
   { section: "Contato", items: [
     { key: "phone", label: "Telefone", placeholder: "(21) 97469-7908" },
     { key: "email", label: "Email", placeholder: "gb.pendotiba@gmail.com" },
@@ -17,11 +19,9 @@ const fields = [
     { key: "headCoach", label: "Head Coach", placeholder: "Mestre André Amaral" },
     { key: "headCoachBelt", label: "Graduação do Head Coach", placeholder: "Faixa Preta 2º Grau" },
   ]},
-  { section: "Pagamento PIX (padrão para eventos)", items: [
-    { key: "pixKey", label: "Chave PIX", placeholder: "gb.pendotiba@gmail.com" },
-    { key: "pixKeyType", label: "Tipo da Chave (email, cpf, cnpj, phone, random)", placeholder: "email" },
-    { key: "pixName", label: "Nome do Beneficiário", placeholder: "Gracie Barra Pendotiba" },
-    { key: "pixCity", label: "Cidade do Beneficiário", placeholder: "Niteroi" },
+  { section: "Pagamento PIX (Mercado Pago)", items: [
+    { key: "mpAccessToken", label: "Access Token do Mercado Pago", placeholder: "APP_USR-...", sensitive: true,
+      hint: "Gerado em mercadopago.com.br/developers no painel da sua aplicação, em Credenciais de produção. Necessário para gerar QR Codes PIX e confirmar pagamentos automaticamente." },
   ]},
   { section: "Hero/Banner Principal", items: [
     { key: "heroTitle", label: "Título Principal", placeholder: "Gracie Barra Pendotiba" },
@@ -56,11 +56,14 @@ export default function SettingsAdmin({ settings: initial }: { settings: Setting
               <div key={field.key}>
                 <label className="block text-xs text-gray-400 mb-1">{field.label}</label>
                 <input
+                  type={field.sensitive ? "password" : "text"}
                   value={settings[field.key] || ""}
                   onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
                   placeholder={field.placeholder}
+                  autoComplete="off"
                   className="w-full bg-gray-950 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
                 />
+                {field.hint && <p className="mt-1 text-xs text-gray-500">{field.hint}</p>}
               </div>
             ))}
           </div>
