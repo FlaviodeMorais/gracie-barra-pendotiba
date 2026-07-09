@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { WebhookSignatureValidator, InvalidWebhookSignatureError } from "mercadopago";
 import { prisma } from "@/lib/prisma";
 import { getPayment } from "@/lib/mercadopago";
-import { getMpAccessToken } from "@/lib/settings";
+import { getMpAccessToken, getMpWebhookSecret } from "@/lib/settings";
 import { isFailedPaymentStatus, isPendingPaymentStatus } from "@/lib/payments";
 
 export async function POST(req: NextRequest) {
@@ -12,6 +13,25 @@ export async function POST(req: NextRequest) {
       body?.data?.id || url.searchParams.get("data.id") || url.searchParams.get("id");
 
     if (!paymentId) return NextResponse.json({ received: true });
+
+    const webhookSecret = await getMpWebhookSecret();
+    if (webhookSecret) {
+      try {
+        WebhookSignatureValidator.validate({
+          xSignature: req.headers.get("x-signature"),
+          xRequestId: req.headers.get("x-request-id"),
+          dataId: url.searchParams.get("data.id"),
+          secret: webhookSecret,
+          toleranceSeconds: 300,
+        });
+      } catch (signatureError) {
+        if (signatureError instanceof InvalidWebhookSignatureError) {
+          console.error("Webhook Mercado Pago rejeitado — assinatura inválida:", signatureError.reason);
+          return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
+        }
+        throw signatureError;
+      }
+    }
 
     const accessToken = await getMpAccessToken();
     if (!accessToken) return NextResponse.json({ received: true });

@@ -22,6 +22,8 @@ const fields: { section: string; items: Field[] }[] = [
   { section: "Pagamento PIX (Mercado Pago)", items: [
     { key: "mpAccessToken", label: "Access Token do Mercado Pago", placeholder: "APP_USR-...", sensitive: true,
       hint: "Gerado em mercadopago.com.br/developers no painel da sua aplicação, em Credenciais de produção. Necessário para gerar QR Codes PIX e confirmar pagamentos automaticamente." },
+    { key: "mpWebhookSecret", label: "Assinatura Secreta do Webhook", placeholder: "Chave secreta gerada no painel de Webhooks", sensitive: true,
+      hint: "Painel da aplicação → Webhooks → 'Configurar notificações' → Assinatura secreta. Opcional, mas recomendado: sem ela, o site aceita a notificação de pagamento sem confirmar que veio mesmo do Mercado Pago." },
   ]},
   { section: "Hero/Banner Principal", items: [
     { key: "heroTitle", label: "Título Principal", placeholder: "Gracie Barra Pendotiba" },
