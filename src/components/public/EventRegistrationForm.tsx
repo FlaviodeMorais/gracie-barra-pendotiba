@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { formatCurrency } from "@/lib/utils";
+import QRCode from "qrcode";
 
 type Event = {
   id: string;
@@ -12,8 +13,26 @@ type Event = {
 
 type Settings = Record<string, string>;
 
+type RegistrationState = {
+  id: string;
+  pixTxId: string | null;
+  adults: number;
+  children: number;
+  totalAmount: number;
+  paid: boolean;
+  paymentStatus: string;
+  reservationExpiresAt?: string | null;
+} | null;
+
 const inputCls =
   "w-full rounded-lg border border-gray-700 bg-gray-950/80 px-3.5 py-2.5 text-sm text-white transition-colors focus:border-red-600 focus:outline-none";
+
+const activePollingStatuses = new Set(["pending", "in_process", "manual_pending"]);
+
+function formatReservationTime(value?: string | null) {
+  if (!value) return null;
+  return new Date(value).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
 
 export default function EventRegistrationForm({
   event,
@@ -22,41 +41,81 @@ export default function EventRegistrationForm({
   event: Event;
   settings: Settings;
 }) {
-  const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [form, setForm] = useState({ name: "", phone: "" });
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [registration, setRegistration] = useState<{ id: string; pixTxId: string | null; adults: number; children: number; totalAmount: number } | null>(null);
+  const [registration, setRegistration] = useState<RegistrationState>(null);
+  const [pixFailed, setPixFailed] = useState(false);
+  const [manualConfirmation, setManualConfirmation] = useState(false);
   const [qrCode, setQrCode] = useState("");
   const [pixPayload, setPixPayload] = useState("");
   const [copied, setCopied] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState("");
 
   const totalAmount = event.price * adults;
 
   useEffect(() => {
-    if (!registration || registration.totalAmount === 0 || paid) return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const regId = searchParams.get("reg");
+    if (!regId) return;
+
+    fetch(`/api/registrations/${regId}/status`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!data) return;
+        setRegistration({
+          id: regId,
+          pixTxId: null,
+          adults: data.adults,
+          children: data.children,
+          totalAmount: data.totalAmount,
+          paid: Boolean(data.paid),
+          paymentStatus: data.paymentStatus || "",
+          reservationExpiresAt: data.reservationExpiresAt,
+        });
+        setForm((current) => ({ ...current, name: data.name || current.name }));
+        setPaid(Boolean(data.paid));
+        setPaymentStatus(data.paymentStatus || "");
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!registration || registration.totalAmount === 0 || !activePollingStatuses.has(paymentStatus) || paid) return;
+
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/registrations/${registration.id}/status`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.paid) {
-          setPaid(true);
+        const response = await fetch(`/api/registrations/${registration.id}/status`);
+        if (!response.ok) return;
+        const data = await response.json();
+        setPaid(Boolean(data.paid));
+        setPaymentStatus(data.paymentStatus || "");
+        setRegistration((current) => current ? { ...current, paid: Boolean(data.paid), paymentStatus: data.paymentStatus, reservationExpiresAt: data.reservationExpiresAt } : current);
+        if (data.paid || !activePollingStatuses.has(data.paymentStatus)) {
           clearInterval(interval);
         }
       } catch {
         // ignore polling errors
       }
     }, 5000);
+
     return () => clearInterval(interval);
-  }, [registration, paid]);
+  }, [registration, paid, paymentStatus]);
 
   const handleSubmit = async (submitEvent: React.FormEvent) => {
     submitEvent.preventDefault();
     setLoading(true);
     setError("");
+    setPixFailed(false);
+    setManualConfirmation(false);
+    setQrCode("");
+    setPixPayload("");
+    setCopied(false);
+    setPaid(false);
+    setPaymentStatus("");
 
     try {
       const response = await fetch(`/api/events/${event.id}/register`, {
@@ -71,11 +130,21 @@ export default function EventRegistrationForm({
         return;
       }
 
-      setRegistration(data);
+      if (data.totalAmount > 0 && data.mpCheckoutUrl) {
+        window.location.href = data.mpCheckoutUrl;
+        return;
+      }
 
-      if (data.totalAmount > 0 && data.mpPix?.qrCodeBase64) {
-        setPixPayload(data.mpPix.qrCode);
-        setQrCode(`data:image/png;base64,${data.mpPix.qrCodeBase64}`);
+      setRegistration(data);
+      setPaid(Boolean(data.paid));
+      setPaymentStatus(data.paymentStatus || "");
+
+      if (data.totalAmount > 0 && data.staticPixPayload) {
+        setPixPayload(data.staticPixPayload);
+        setQrCode(await QRCode.toDataURL(data.staticPixPayload, { errorCorrectionLevel: "M", width: 260 }));
+        setManualConfirmation(true);
+      } else if (data.totalAmount > 0 && data.mpPixError) {
+        setPixFailed(true);
       }
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -91,29 +160,36 @@ export default function EventRegistrationForm({
   };
 
   if (registration) {
+    const reservationTime = formatReservationTime(registration.reservationExpiresAt);
+    const isExpired = paymentStatus === "expired";
+    const isFailed = paymentStatus === "cancelled" || paymentStatus === "rejected";
+
     return (
       <div className="rounded-xl border border-green-800 bg-gray-900 p-4 sm:p-6">
         <div className="mb-5 text-center">
           <div className="mb-3 text-4xl">✅</div>
-          <h3 className="text-lg font-black text-white sm:text-xl">Inscrição Confirmada!</h3>
+          <h3 className="text-lg font-black text-white sm:text-xl">Inscrição Recebida!</h3>
           <p className="mt-2 text-sm text-gray-400">
             Obrigado, <strong className="text-white">{form.name}</strong>!
           </p>
         </div>
 
-        {registration && registration.totalAmount > 0 && paid && (
+        {registration.totalAmount > 0 && paid && (
           <div className="rounded-lg border border-green-800 bg-green-950/50 p-4 text-center">
             <p className="text-sm font-semibold text-green-400">✅ Pagamento confirmado! Nos vemos no evento.</p>
           </div>
         )}
 
-        {registration && registration.totalAmount > 0 && qrCode && !paid && (
+        {registration.totalAmount > 0 && qrCode && !paid && !isExpired && !isFailed && (
           <div className="rounded-xl border border-gray-800 bg-gray-950 p-4 text-center sm:p-5">
             <h4 className="mb-1 text-base font-bold text-white">Pagamento via PIX</h4>
             <div className="mb-4 space-y-1 text-sm text-gray-400">
               <p>{registration.adults} adulto{registration.adults > 1 ? "s" : ""} × {formatCurrency(event.price)} = <strong className="text-white">{formatCurrency(registration.totalAmount)}</strong></p>
               {registration.children > 0 && (
                 <p>{registration.children} criança{registration.children > 1 ? "s" : ""} (até 12 anos) — <span className="text-green-400 font-semibold">Gratuito</span></p>
+              )}
+              {reservationTime && (
+                <p className="text-yellow-400">Reserva garantida até {reservationTime}.</p>
               )}
             </div>
             <div className="mb-4 flex justify-center">
@@ -138,13 +214,63 @@ export default function EventRegistrationForm({
                 {copied ? "✓ Copiado" : "Copiar"}
               </button>
             </div>
-            <p className="mt-3 text-xs leading-relaxed text-gray-600 animate-pulse">
-              Aguardando confirmação do pagamento...
+            {manualConfirmation ? (
+              <p className="mt-3 text-xs leading-relaxed text-gray-500">
+                Após o pagamento, guarde o comprovante. A confirmação será feita manualmente pela equipe.
+              </p>
+            ) : (
+              <p className="mt-3 text-xs leading-relaxed text-gray-600 animate-pulse">
+                Aguardando confirmação do pagamento...
+              </p>
+            )}
+          </div>
+        )}
+
+        {registration.totalAmount > 0 && isExpired && (
+          <div className="rounded-lg border border-red-800 bg-red-950/40 p-4 text-center">
+            <p className="text-sm font-semibold text-red-300">A reserva expirou antes da confirmação do pagamento.</p>
+            <p className="mt-2 text-xs leading-relaxed text-gray-400">
+              Você pode preencher o formulário novamente para gerar um novo PIX e recuperar a vaga, se ela ainda estiver disponível.
             </p>
           </div>
         )}
 
-        {registration && registration.totalAmount === 0 && (
+        {registration.totalAmount > 0 && isFailed && (
+          <div className="rounded-lg border border-red-800 bg-red-950/40 p-4 text-center">
+            <p className="text-sm font-semibold text-red-300">
+              O pagamento foi marcado como {paymentStatus === "cancelled" ? "cancelado" : "recusado"}.
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-gray-400">
+              Tente gerar uma nova inscrição para refazer o PIX.
+            </p>
+          </div>
+        )}
+
+        {registration.totalAmount > 0 && pixFailed && (
+          <div className="rounded-lg border border-yellow-800 bg-yellow-950/40 p-4 text-center">
+            <p className="text-sm font-semibold text-yellow-400">
+              Não foi possível gerar o PIX automaticamente no momento.
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-gray-400">
+              Sua inscrição foi registrada. Para combinar o pagamento de{" "}
+              <strong className="text-white">{formatCurrency(registration.totalAmount)}</strong>, entre em contato pelo WhatsApp.
+            </p>
+            {settings.whatsapp && (
+              <a
+                href={`https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(
+                  `Oi! Me inscrevi no evento "${event.title}" e preciso combinar o pagamento da inscrição.`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-block rounded-lg bg-green-600 px-4 py-2 text-xs font-bold text-white hover:bg-green-700"
+              >
+                Falar no WhatsApp
+              </a>
+            )}
+          </div>
+        )}
+
+        {registration.totalAmount === 0 && (
           <div className="rounded-lg border border-green-800 bg-green-950/50 p-4 text-center">
             <p className="text-sm font-semibold text-green-400">
               {event.price === 0 ? "Evento gratuito!" : "Nenhum valor a pagar."} Apresente-se no local na data informada.
@@ -188,22 +314,6 @@ export default function EventRegistrationForm({
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-gray-300" htmlFor="reg-email">
-            Email *
-          </label>
-          <input
-            id="reg-email"
-            required
-            type="email"
-            autoComplete="email"
-            value={form.email}
-            onChange={(changeEvent) => setForm({ ...form, email: changeEvent.target.value })}
-            placeholder="seu@email.com"
-            className={inputCls}
-          />
-        </div>
-
-        <div>
           <label className="mb-1.5 block text-xs font-semibold text-gray-300" htmlFor="reg-phone">
             WhatsApp *
           </label>
@@ -219,7 +329,6 @@ export default function EventRegistrationForm({
           />
         </div>
 
-        {/* Quantidade de participantes */}
         <div className="rounded-xl border border-gray-700 bg-gray-950/60 p-4 space-y-4">
           <p className="text-sm font-semibold text-white">Quantos vão participar?</p>
 
@@ -289,8 +398,8 @@ export default function EventRegistrationForm({
           {loading
             ? "Processando..."
             : event.price > 0
-            ? `Inscrever-se · ${formatCurrency(totalAmount)}`
-            : "Confirmar Inscrição Gratuita"}
+              ? `Inscrever-se · ${formatCurrency(totalAmount)}`
+              : "Confirmar Inscrição Gratuita"}
         </button>
       </form>
     </div>

@@ -64,6 +64,7 @@ model EventRegistration {
   paymentStatus String   @default("pending")
   pixTxId       String?
   mpPaymentId   String?
+  reservationExpiresAt DateTime?
   notes         String?
   checkedIn     Boolean  @default(false)
   createdAt     DateTime @default(now())

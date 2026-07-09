@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { getPaymentStatusLabel } from "@/lib/payments";
 
 type Registration = {
   id: string;
@@ -15,6 +16,7 @@ type Registration = {
   notes: string | null;
   pixTxId: string | null;
   createdAt: string;
+  reservationExpiresAt?: string | null;
   eventId: string;
   event: { title: string; price: number };
 };
@@ -22,6 +24,19 @@ type Registration = {
 type Event = { id: string; title: string; date: string };
 
 type Stats = { total: number; paid: number; pending: number; checkedIn: number };
+
+function paymentBadgeClasses(status: string, paid: boolean) {
+  if (paid || status === "paid" || status === "approved" || status === "not_required") {
+    return "bg-green-900/50 text-green-400 hover:bg-green-900";
+  }
+  if (status === "manual_pending") {
+    return "bg-orange-900/50 text-orange-300 hover:bg-orange-900";
+  }
+  if (status === "expired" || status === "cancelled" || status === "rejected") {
+    return "bg-red-900/40 text-red-300 hover:bg-red-900";
+  }
+  return "bg-yellow-900/50 text-yellow-400 hover:bg-yellow-900";
+}
 
 export default function ParticipantsTable({
   registrations,
@@ -39,18 +54,21 @@ export default function ParticipantsTable({
   const [search, setSearch] = useState("");
 
   const filtered = registrations
-    .filter((r) => !filter || r.eventId === filter)
-    .filter((r) =>
-      !search || r.name.toLowerCase().includes(search.toLowerCase()) ||
-      r.email.toLowerCase().includes(search.toLowerCase()) ||
-      r.phone.includes(search)
+    .filter((registration) => !filter || registration.eventId === filter)
+    .filter((registration) =>
+      !search || registration.name.toLowerCase().includes(search.toLowerCase()) ||
+      registration.phone.includes(search)
     );
 
   const handlePayment = async (id: string, paid: boolean) => {
     await fetch(`/api/registrations/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paid, paymentStatus: paid ? "paid" : "pending" }),
+      body: JSON.stringify({
+        paid,
+        paymentStatus: paid ? "paid" : "manual_pending",
+        reservationExpiresAt: null,
+      }),
     });
     router.refresh();
   };
@@ -78,10 +96,10 @@ export default function ParticipantsTable({
           { label: "Pagos", value: stats.paid, color: "text-green-400" },
           { label: "Pendentes", value: stats.pending, color: "text-yellow-400" },
           { label: "Check-in", value: stats.checkedIn, color: "text-blue-400" },
-        ].map((s) => (
-          <div key={s.label} className="bg-gray-900 rounded-xl p-4 border border-gray-800 text-center">
-            <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
-            <p className="text-gray-500 text-xs mt-1">{s.label}</p>
+        ].map((stat) => (
+          <div key={stat.label} className="bg-gray-900 rounded-xl p-4 border border-gray-800 text-center">
+            <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
+            <p className="text-gray-500 text-xs mt-1">{stat.label}</p>
           </div>
         ))}
       </div>
@@ -89,20 +107,20 @@ export default function ParticipantsTable({
       <div className="flex flex-wrap gap-3 mb-4">
         <select
           value={filter}
-          onChange={(e) => {
-            setFilter(e.target.value);
-            const url = e.target.value ? `/admin/participantes?eventId=${e.target.value}` : "/admin/participantes";
+          onChange={(changeEvent) => {
+            setFilter(changeEvent.target.value);
+            const url = changeEvent.target.value ? `/admin/participantes?eventId=${changeEvent.target.value}` : "/admin/participantes";
             router.push(url);
           }}
           className="bg-gray-900 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
         >
           <option value="">Todos os eventos</option>
-          {events.map((e) => <option key={e.id} value={e.id}>{e.title}</option>)}
+          {events.map((event) => <option key={event.id} value={event.id}>{event.title}</option>)}
         </select>
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nome, email ou telefone..."
+          onChange={(changeEvent) => setSearch(changeEvent.target.value)}
+          placeholder="Buscar por nome ou telefone..."
           className="flex-1 min-w-48 bg-gray-900 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600"
         />
       </div>
@@ -121,49 +139,49 @@ export default function ParticipantsTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {filtered.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-800/50 transition-colors">
+              {filtered.map((registration) => (
+                <tr key={registration.id} className="hover:bg-gray-800/50 transition-colors">
                   <td className="px-4 py-3">
-                    <p className="text-white font-medium">{r.name}</p>
-                    {r.academy && <p className="text-gray-500 text-xs">{r.academy}</p>}
-                    <p className="text-gray-600 text-xs">{formatDateTime(r.createdAt)}</p>
+                    <p className="text-white font-medium">{registration.name}</p>
+                    {registration.academy && <p className="text-gray-500 text-xs">{registration.academy}</p>}
+                    <p className="text-gray-600 text-xs">{formatDateTime(registration.createdAt)}</p>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <p className="text-gray-300">{r.email}</p>
-                    <p className="text-gray-500 text-xs">{r.phone}</p>
+                    <p className="text-gray-300">{registration.phone}</p>
+                    {registration.reservationExpiresAt && !registration.paid && (
+                      <p className="text-gray-500 text-xs">
+                        Reserva até {formatDateTime(registration.reservationExpiresAt)}
+                      </p>
+                    )}
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
-                    <p className="text-gray-300 text-xs">{r.event.title}</p>
-                    {r.event.price > 0 && <p className="text-gray-500 text-xs">{formatCurrency(r.event.price)}</p>}
+                    <p className="text-gray-300 text-xs">{registration.event.title}</p>
+                    {registration.event.price > 0 && <p className="text-gray-500 text-xs">{formatCurrency(registration.event.price)}</p>}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button
                       type="button"
-                      onClick={() => handlePayment(r.id, !r.paid)}
-                      className={`text-xs px-2 py-1 rounded-full font-semibold transition-all ${
-                        r.paid
-                          ? "bg-green-900/50 text-green-400 hover:bg-green-900"
-                          : "bg-yellow-900/50 text-yellow-400 hover:bg-yellow-900"
-                      }`}
+                      onClick={() => handlePayment(registration.id, !registration.paid)}
+                      className={`text-xs px-2 py-1 rounded-full font-semibold transition-all ${paymentBadgeClasses(registration.paymentStatus, registration.paid)}`}
                     >
-                      {r.paid ? "✓ Pago" : "Pendente"}
+                      {registration.paid ? "✓ Pago" : getPaymentStatusLabel(registration.paymentStatus)}
                     </button>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button
                       type="button"
-                      onClick={() => handleCheckIn(r.id, !r.checkedIn)}
+                      onClick={() => handleCheckIn(registration.id, !registration.checkedIn)}
                       className={`text-xs px-2 py-1 rounded-full font-semibold transition-all ${
-                        r.checkedIn
+                        registration.checkedIn
                           ? "bg-blue-900/50 text-blue-400 hover:bg-blue-900"
                           : "bg-gray-800 text-gray-500 hover:bg-gray-700"
                       }`}
                     >
-                      {r.checkedIn ? "✓ Presente" : "Ausente"}
+                      {registration.checkedIn ? "✓ Presente" : "Ausente"}
                     </button>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <button type="button" onClick={() => handleDelete(r.id)} className="text-red-500 hover:text-red-400 text-xs">
+                    <button type="button" onClick={() => handleDelete(registration.id)} className="text-red-500 hover:text-red-400 text-xs">
                       Remover
                     </button>
                   </td>

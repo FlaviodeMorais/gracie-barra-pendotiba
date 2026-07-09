@@ -1,11 +1,26 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import { ACTIVE_PENDING_PAYMENT_STATUSES } from "@/lib/payments";
 
 export const revalidate = 0;
 
 export default async function AdminDashboard() {
-  const [eventCount, trialCount, bannerCount, recentTrials, recentEvents] = await Promise.all([
+  const now = new Date();
+
+  await prisma.eventRegistration.updateMany({
+    where: {
+      paid: false,
+      paymentStatus: { in: Array.from(ACTIVE_PENDING_PAYMENT_STATUSES) },
+      reservationExpiresAt: { lte: now },
+    },
+    data: {
+      paymentStatus: "expired",
+      reservationExpiresAt: null,
+    },
+  });
+
+  const [eventCount, trialCount, bannerCount, recentTrials, recentEvents, totalRegistrations, pendingPayments, pendingTrials] = await Promise.all([
     prisma.event.count(),
     prisma.trialClass.count(),
     prisma.banner.count({ where: { active: true } }),
@@ -16,11 +31,16 @@ export default async function AdminDashboard() {
       where: { status: { in: ["upcoming", "open"] } },
       include: { _count: { select: { registrations: true } } },
     }),
+    prisma.eventRegistration.count(),
+    prisma.eventRegistration.count({
+      where: {
+        paid: false,
+        paymentStatus: { in: Array.from(ACTIVE_PENDING_PAYMENT_STATUSES) },
+        reservationExpiresAt: { gt: now },
+      },
+    }),
+    prisma.trialClass.count({ where: { status: "pending" } }),
   ]);
-
-  const totalRegistrations = await prisma.eventRegistration.count();
-  const pendingPayments = await prisma.eventRegistration.count({ where: { paid: false, paymentStatus: "pending" } });
-  const pendingTrials = await prisma.trialClass.count({ where: { status: "pending" } });
 
   const stats = [
     { label: "Eventos Ativos", value: eventCount, icon: "🏆", href: "/admin/eventos", color: "border-red-700" },
@@ -56,13 +76,13 @@ export default async function AdminDashboard() {
           </div>
           {recentEvents.length > 0 ? (
             <div className="space-y-3">
-              {recentEvents.map((e) => (
-                <div key={e.id} className="flex items-center justify-between p-3 bg-gray-950 rounded-lg">
+              {recentEvents.map((event) => (
+                <div key={event.id} className="flex items-center justify-between p-3 bg-gray-950 rounded-lg">
                   <div>
-                    <p className="text-white text-sm font-semibold">{e.title}</p>
-                    <p className="text-gray-500 text-xs">{formatDate(e.date)}</p>
+                    <p className="text-white text-sm font-semibold">{event.title}</p>
+                    <p className="text-gray-500 text-xs">{formatDate(event.date)}</p>
                   </div>
-                  <span className="text-blue-400 text-xs font-bold">{e._count.registrations} inscritos</span>
+                  <span className="text-blue-400 text-xs font-bold">{event._count.registrations} inscritos</span>
                 </div>
               ))}
             </div>
@@ -78,17 +98,17 @@ export default async function AdminDashboard() {
           </div>
           {recentTrials.length > 0 ? (
             <div className="space-y-3">
-              {recentTrials.map((t) => (
-                <div key={t.id} className="flex items-center justify-between p-3 bg-gray-950 rounded-lg">
+              {recentTrials.map((trial) => (
+                <div key={trial.id} className="flex items-center justify-between p-3 bg-gray-950 rounded-lg">
                   <div>
-                    <p className="text-white text-sm font-semibold">{t.name}</p>
-                    <p className="text-gray-500 text-xs">{t.modality} • {t.preferredDay}</p>
+                    <p className="text-white text-sm font-semibold">{trial.name}</p>
+                    <p className="text-gray-500 text-xs">{trial.modality} ⬢ {trial.preferredDay}</p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                    t.status === "pending" ? "bg-yellow-900/50 text-yellow-400" :
-                    t.status === "confirmed" ? "bg-green-900/50 text-green-400" :
+                    trial.status === "pending" ? "bg-yellow-900/50 text-yellow-400" :
+                    trial.status === "confirmed" ? "bg-green-900/50 text-green-400" :
                     "bg-gray-800 text-gray-400"
-                  }`}>{t.status === "pending" ? "Pendente" : t.status === "confirmed" ? "Confirmado" : t.status}</span>
+                  }`}>{trial.status === "pending" ? "Pendente" : trial.status === "confirmed" ? "Confirmado" : trial.status}</span>
                 </div>
               ))}
             </div>
@@ -104,11 +124,11 @@ export default async function AdminDashboard() {
           { href: "/admin/eventos/novo", label: "Criar Evento", icon: "➕" },
           { href: "/admin/horarios", label: "Editar Horários", icon: "📅" },
           { href: "/admin/configuracoes", label: "Configurações", icon: "⚙️" },
-        ].map((a) => (
-          <Link key={a.href} href={a.href}
+        ].map((action) => (
+          <Link key={action.href} href={action.href}
             className="bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-xl p-4 text-center transition-all">
-            <div className="text-2xl mb-2">{a.icon}</div>
-            <p className="text-gray-300 text-xs font-medium">{a.label}</p>
+            <div className="text-2xl mb-2">{action.icon}</div>
+            <p className="text-gray-300 text-xs font-medium">{action.label}</p>
           </Link>
         ))}
       </div>
