@@ -1,4 +1,4 @@
-const MP_API_URL = "https://api.mercadopago.com/v1/payments";
+import { MercadoPagoConfig, Payment } from "mercadopago";
 
 export type MpPixPayment = {
   id: number;
@@ -6,6 +6,10 @@ export type MpPixPayment = {
   qrCodeBase64: string;
   qrCode: string;
 };
+
+function paymentClient(accessToken: string): Payment {
+  return new Payment(new MercadoPagoConfig({ accessToken }));
+}
 
 export async function createPixPayment(params: {
   amount: number;
@@ -15,48 +19,47 @@ export async function createPixPayment(params: {
   notificationUrl?: string;
   accessToken: string;
 }): Promise<MpPixPayment> {
-  const { accessToken } = params;
+  try {
+    const payment = await paymentClient(params.accessToken).create({
+      body: {
+        transaction_amount: Number(params.amount.toFixed(2)),
+        description: params.description,
+        payment_method_id: "pix",
+        external_reference: params.externalReference,
+        notification_url: params.notificationUrl,
+        payer: { email: params.payerEmail },
+      },
+      requestOptions: { idempotencyKey: params.externalReference },
+    });
 
-  const response = await fetch(MP_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      "X-Idempotency-Key": params.externalReference,
-    },
-    body: JSON.stringify({
-      transaction_amount: Number(params.amount.toFixed(2)),
-      description: params.description,
-      payment_method_id: "pix",
-      external_reference: params.externalReference,
-      notification_url: params.notificationUrl,
-      payer: { email: params.payerEmail },
-    }),
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    const error = new Error(data.message || "Erro ao criar pagamento PIX no Mercado Pago") as Error & {
+    return {
+      id: payment.id!,
+      status: payment.status!,
+      qrCodeBase64: payment.point_of_interaction?.transaction_data?.qr_code_base64 || "",
+      qrCode: payment.point_of_interaction?.transaction_data?.qr_code || "",
+    };
+  } catch (error) {
+    const mpError = error as { status?: number; message?: string; cause?: unknown };
+    const wrapped = new Error(mpError?.message || "Erro ao criar pagamento PIX no Mercado Pago") as Error & {
       status?: number;
       cause?: unknown;
     };
-    error.status = response.status;
-    error.cause = data;
-    throw error;
+    wrapped.status = mpError?.status;
+    wrapped.cause = mpError?.cause;
+    throw wrapped;
   }
-
-  return {
-    id: data.id,
-    status: data.status,
-    qrCodeBase64: data.point_of_interaction?.transaction_data?.qr_code_base64 || "",
-    qrCode: data.point_of_interaction?.transaction_data?.qr_code || "",
-  };
 }
 
 export async function getPayment(paymentId: string | number, accessToken: string) {
-  const response = await fetch(`${MP_API_URL}/${paymentId}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!response.ok) throw new Error("Erro ao consultar pagamento no Mercado Pago");
-  return response.json();
+  try {
+    const payment = await paymentClient(accessToken).get({ id: paymentId });
+    return {
+      id: payment.id,
+      status: payment.status,
+      external_reference: payment.external_reference ?? null,
+      transaction_amount: payment.transaction_amount ?? 0,
+    };
+  } catch {
+    throw new Error("Erro ao consultar pagamento no Mercado Pago");
+  }
 }

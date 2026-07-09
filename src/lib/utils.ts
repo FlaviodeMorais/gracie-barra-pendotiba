@@ -1,3 +1,5 @@
+import { createStaticPix, hasError } from "pix-utils";
+
 export const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 export const DAYS_FULL = [
   "Domingo",
@@ -51,6 +53,14 @@ export function eventStatusLabel(status: string): { label: string; color: string
   return map[status] || { label: status, color: "bg-gray-100 text-gray-800" };
 }
 
+function normalizePixPhoneKey(key: string): string {
+  const digits = key.replace(/\D/g, "");
+  if (digits.startsWith("55") && digits.length >= 12) return `+${digits}`;
+  if (digits.length === 10 || digits.length === 11) return `+55${digits}`;
+  return key;
+}
+
+/** Gera o payload Pix estático (BR Code/EMV) via `pix-utils`, testado contra a spec do Bacen. */
 export function generatePixPayload(
   pixKey: string,
   pixKeyType: string,
@@ -60,64 +70,22 @@ export function generatePixPayload(
   txId: string,
   description: string
 ): string {
-  function crc16(str: string): string {
-    let crc = 0xffff;
-    for (let i = 0; i < str.length; i++) {
-      crc ^= str.charCodeAt(i) << 8;
-      for (let j = 0; j < 8; j++) {
-        if (crc & 0x8000) crc = (crc << 1) ^ 0x1021;
-        else crc <<= 1;
-        crc &= 0xffff;
-      }
-    }
-    return crc.toString(16).toUpperCase().padStart(4, "0");
-  }
-
-  function field(id: string, value: string): string {
-    return `${id}${value.length.toString().padStart(2, "0")}${value}`;
-  }
-
-  function sanitize(str: string): string {
-    return str.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\x20-\x7E]/g, "");
-  }
-
-  function normalizePhone(key: string): string {
-    const digits = key.replace(/\D/g, "");
-    if (digits.startsWith("55") && digits.length >= 12) return `+${digits}`;
-    if (digits.length === 11 || digits.length === 10) return `+55${digits}`;
-    return key;
-  }
-
-  const normalizedKey = (pixKeyType === "phone" || pixKeyType === "celular")
-    ? normalizePhone(pixKey)
+  const normalizedKey = pixKeyType === "phone" || pixKeyType === "celular"
+    ? normalizePixPhoneKey(pixKey)
     : pixKey;
 
-  const guiValue = "BR.GOV.BCB.PIX";
-  const keyField = field("01", normalizedKey);
-  const sanitizedDesc = description ? sanitize(description).substring(0, 72) : "";
-  const descField = sanitizedDesc ? field("02", sanitizedDesc) : "";
-  const merchantAccountInfo = field("00", guiValue) + keyField + descField;
+  const result = createStaticPix({
+    merchantName,
+    merchantCity,
+    pixKey: normalizedKey,
+    transactionAmount: amount,
+    txid: txId.replace(/[^a-zA-Z0-9]/g, "").substring(0, 25) || undefined,
+    infoAdicional: description,
+  });
 
-  const amountStr = amount.toFixed(2);
-  const sanitizedName = sanitize(merchantName).toUpperCase().substring(0, 25);
-  const sanitizedCity = sanitize(merchantCity).toUpperCase().substring(0, 15);
-  const sanitizedTxId = txId.replace(/[^a-zA-Z0-9]/g, "").substring(0, 25) || "***";
+  if (hasError(result)) {
+    throw new Error(`Falha ao gerar Pix estático: ${result.message}`);
+  }
 
-  const addDataField = field("05", sanitizedTxId);
-  const additionalData = field("62", addDataField);
-
-  let payload =
-    field("00", "01") +
-    field("26", merchantAccountInfo) +
-    field("52", "0000") +
-    field("53", "986") +
-    field("54", amountStr) +
-    field("58", "BR") +
-    field("59", sanitizedName) +
-    field("60", sanitizedCity) +
-    additionalData +
-    "6304";
-
-  payload += crc16(payload);
-  return payload;
+  return result.toBRCode();
 }
