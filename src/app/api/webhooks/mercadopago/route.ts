@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPayment } from "@/lib/mercadopago";
 import { getMpAccessToken } from "@/lib/settings";
-import { notifyAdmin } from "@/lib/whatsapp";
-import { formatCurrency } from "@/lib/utils";
 import { isFailedPaymentStatus, isPendingPaymentStatus } from "@/lib/payments";
 
 export async function POST(req: NextRequest) {
@@ -24,7 +22,6 @@ export async function POST(req: NextRequest) {
 
     const registration = await prisma.eventRegistration.findUnique({
       where: { id: registrationId },
-      include: { event: { select: { title: true } } },
     });
     if (!registration) return NextResponse.json({ received: true });
 
@@ -41,14 +38,6 @@ export async function POST(req: NextRequest) {
         reservationExpiresAt: paid ? null : isPendingPaymentStatus(paymentStatus) ? registration.reservationExpiresAt : reservationExpired,
       },
     });
-
-    if (paid && !registration.paid) {
-      notifyAdmin(
-        `✅ Pagamento confirmado automaticamente — ${registration.event.title}
-` +
-          `${registration.name} · ${registration.phone} · ${formatCurrency(registration.totalAmount)}`
-      ).catch(() => {});
-    }
 
     return NextResponse.json({ received: true });
   } catch (error) {

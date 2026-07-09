@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
-import { createPreference } from "@/lib/mercadopago";
+import { createPixPayment } from "@/lib/mercadopago";
 import { getMpAccessToken, getAllSettings } from "@/lib/settings";
-import { generatePixPayload, formatCurrency } from "@/lib/utils";
-import { notifyAdmin } from "@/lib/whatsapp";
+import { generatePixPayload } from "@/lib/utils";
 import {
   ACTIVE_PENDING_PAYMENT_STATUSES,
   getReservationExpiration,
   isReservationActive,
 } from "@/lib/payments";
-
-function isMercadoPagoConfigError(error: unknown) {
-  const maybeError = error as { message?: string; status?: number };
-  return maybeError?.status === 401 ||
-    maybeError?.status === 403 ||
-    /Unauthorized use of live credentials/i.test(maybeError?.message || "");
-}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -112,7 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           data: baseData,
         });
 
-    let mpCheckoutUrl: string | null = null;
+    let mpPix: { qrCode: string; qrCodeBase64: string } | null = null;
     let mpPixError = false;
     let staticPixPayload: string | null = null;
     const accessToken = await getMpAccessToken();
@@ -121,34 +113,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (totalAmount > 0 && accessToken) {
       try {
-        const preference = await createPreference({
-          title: `Inscrição ${event.title}`.substring(0, 255),
+        const payment = await createPixPayment({
           amount: totalAmount,
+          description: `Inscrição ${event.title}`.substring(0, 255),
           payerEmail: syntheticEmail,
           externalReference: registration.id,
           notificationUrl: publicSiteUrl ? `${publicSiteUrl}/api/webhooks/mercadopago` : undefined,
-          backUrl: publicSiteUrl ? `${publicSiteUrl}/eventos/${event.id}?reg=${registration.id}` : undefined,
           accessToken,
         });
-        mpCheckoutUrl = preference.initPoint;
+        registration = await prisma.eventRegistration.update({
+          where: { id: registration.id },
+          data: {
+            mpPaymentId: String(payment.id),
+            paymentStatus: payment.status || "pending",
+            paid: payment.status === "approved",
+            reservationExpiresAt: payment.status === "approved" ? null : reservationExpiresAt,
+          },
+        });
+        mpPix = { qrCode: payment.qrCode, qrCodeBase64: payment.qrCodeBase64 };
       } catch (mpError) {
         console.error("Erro Mercado Pago:", mpError);
-        if (isMercadoPagoConfigError(mpError)) {
-          await prisma.eventRegistration.update({
-            where: { id: registration.id },
-            data: {
-              paymentStatus: "expired",
-              reservationExpiresAt: null,
-            },
-          });
-
-          return NextResponse.json(
-            {
-              error: "O PIX automático está indisponível no momento por configuração do Mercado Pago. Tente novamente mais tarde.",
-            },
-            { status: 503 }
-          );
-        }
         mpPixError = true;
       }
     } else if (totalAmount > 0) {
@@ -176,22 +160,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    if (totalAmount > 0) {
-      const statusLine = mpCheckoutUrl
-        ? "Checkout Mercado Pago gerado (confirmação automática)."
-        : staticPixPayload
-          ? "Pix estático gerado (confirmação manual necessária)."
-          : "PIX não gerado — combine o pagamento com o aluno.";
-
-      notifyAdmin(
-        `🥋 Nova inscrição — ${event.title}\n` +
-          `${data.name} · ${phone}\n` +
-          `${adults} adulto${adults > 1 ? "s" : ""}${children > 0 ? ` + ${children} criança${children > 1 ? "s" : ""}` : ""} · ${formatCurrency(totalAmount)}\n` +
-          `${statusLine}\nReserva até ${reservationExpiresAt?.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) || "--:--"}.`
-      ).catch(() => {});
-    }
-
-    return NextResponse.json({ ...registration, event, mpCheckoutUrl, mpPixError, staticPixPayload }, { status: 201 });
+    return NextResponse.json({ ...registration, event, mpPix, mpPixError, staticPixPayload }, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Erro ao realizar inscrição" }, { status: 500 });

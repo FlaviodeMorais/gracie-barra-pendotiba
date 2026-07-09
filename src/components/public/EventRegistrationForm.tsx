@@ -58,32 +58,6 @@ export default function EventRegistrationForm({
   const totalAmount = event.price * adults;
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const regId = searchParams.get("reg");
-    if (!regId) return;
-
-    fetch(`/api/registrations/${regId}/status`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        if (!data) return;
-        setRegistration({
-          id: regId,
-          pixTxId: null,
-          adults: data.adults,
-          children: data.children,
-          totalAmount: data.totalAmount,
-          paid: Boolean(data.paid),
-          paymentStatus: data.paymentStatus || "",
-          reservationExpiresAt: data.reservationExpiresAt,
-        });
-        setForm((current) => ({ ...current, name: data.name || current.name }));
-        setPaid(Boolean(data.paid));
-        setPaymentStatus(data.paymentStatus || "");
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
     if (!registration || registration.totalAmount === 0 || !activePollingStatuses.has(paymentStatus) || paid) return;
 
     const interval = setInterval(async () => {
@@ -130,16 +104,14 @@ export default function EventRegistrationForm({
         return;
       }
 
-      if (data.totalAmount > 0 && data.mpCheckoutUrl) {
-        window.location.href = data.mpCheckoutUrl;
-        return;
-      }
-
       setRegistration(data);
       setPaid(Boolean(data.paid));
       setPaymentStatus(data.paymentStatus || "");
 
-      if (data.totalAmount > 0 && data.staticPixPayload) {
+      if (data.totalAmount > 0 && data.mpPix?.qrCodeBase64) {
+        setPixPayload(data.mpPix.qrCode);
+        setQrCode(`data:image/png;base64,${data.mpPix.qrCodeBase64}`);
+      } else if (data.totalAmount > 0 && data.staticPixPayload) {
         setPixPayload(data.staticPixPayload);
         setQrCode(await QRCode.toDataURL(data.staticPixPayload, { errorCorrectionLevel: "M", width: 260 }));
         setManualConfirmation(true);

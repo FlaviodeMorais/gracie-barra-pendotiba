@@ -23,14 +23,6 @@ const fields: { section: string; items: Field[] }[] = [
     { key: "mpAccessToken", label: "Access Token do Mercado Pago", placeholder: "APP_USR-...", sensitive: true,
       hint: "Gerado em mercadopago.com.br/developers no painel da sua aplicação, em Credenciais de produção. Necessário para gerar QR Codes PIX e confirmar pagamentos automaticamente." },
   ]},
-  { section: "Aviso ao Admin via WhatsApp (Zapster)", items: [
-    { key: "zapsterToken", label: "Token Zapster", placeholder: "Bearer token da sua conta Zapster", sensitive: true,
-      hint: "Painel Zapster → sua conta → API Token." },
-    { key: "zapsterInstanceId", label: "Instance ID", placeholder: "ID da instância criada para o app da GB",
-      hint: "Crie uma instância nova no painel Zapster e escaneie o QR Code com o WhatsApp que vai receber os avisos." },
-    { key: "zapsterNotifyPhone", label: "Número que recebe o aviso", placeholder: "5521974697908",
-      hint: "Se vazio, usa o número de WhatsApp cadastrado em Contato." },
-  ]},
   { section: "Hero/Banner Principal", items: [
     { key: "heroTitle", label: "Título Principal", placeholder: "Gracie Barra Pendotiba" },
     { key: "heroSubtitle", label: "Subtítulo", placeholder: "Jiu-Jitsu & Defesa Pessoal" },
