@@ -164,6 +164,12 @@ export default function EventRegistrationForm({
                 <p className="text-yellow-400">Reserva garantida até {reservationTime}.</p>
               )}
             </div>
+            {!manualConfirmation && (
+              <div className="mb-4 rounded-lg border border-yellow-600/40 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-300">
+                ⚠️ <strong>Escaneie o QR Code abaixo</strong> para garantir a confirmação automática.<br />
+                Não pague pela chave PIX avulsa — o sistema não conseguirá identificar seu pagamento.
+              </div>
+            )}
             <div className="mb-4 flex justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qrCode} alt="QR Code PIX" width={200} height={200} className="rounded-lg" />
