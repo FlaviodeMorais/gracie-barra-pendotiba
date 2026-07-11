@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WebhookSignatureValidator, InvalidWebhookSignatureError } from "mercadopago";
-import { prisma } from "@/lib/prisma";
 import { getPayment } from "@/lib/mercadopago";
 import { getMpAccessToken, getMpWebhookSecret } from "@/lib/settings";
-import { isFailedPaymentStatus, isPendingPaymentStatus } from "@/lib/payments";
+import { confirmarPagamento } from "@/lib/confirmar-pagamento";
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,7 +25,7 @@ export async function POST(req: NextRequest) {
         });
       } catch (signatureError) {
         if (signatureError instanceof InvalidWebhookSignatureError) {
-          console.error("Webhook Mercado Pago rejeitado — assinatura inválida:", signatureError.reason);
+          console.error("Webhook MP rejeitado — assinatura inválida:", signatureError.reason);
           return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
         }
         throw signatureError;
@@ -37,27 +36,13 @@ export async function POST(req: NextRequest) {
     if (!accessToken) return NextResponse.json({ received: true });
 
     const payment = await getPayment(paymentId, accessToken);
-    const registrationId = payment.external_reference;
-    if (!registrationId) return NextResponse.json({ received: true });
+    if (!payment.external_reference) return NextResponse.json({ received: true });
 
-    const registration = await prisma.eventRegistration.findUnique({
-      where: { id: registrationId },
-    });
-    if (!registration) return NextResponse.json({ received: true });
-
-    const paymentStatus = payment.status || "pending";
-    const paid = paymentStatus === "approved";
-    const reservationExpired = isFailedPaymentStatus(paymentStatus) ? new Date() : registration.reservationExpiresAt;
-
-    await prisma.eventRegistration.update({
-      where: { id: registrationId },
-      data: {
-        paymentStatus,
-        paid,
-        mpPaymentId: String(payment.id),
-        reservationExpiresAt: paid ? null : isPendingPaymentStatus(paymentStatus) ? registration.reservationExpiresAt : reservationExpired,
-      },
-    });
+    await confirmarPagamento(
+      payment.external_reference,
+      payment.status || "pending",
+      String(payment.id)
+    );
 
     return NextResponse.json({ received: true });
   } catch (error) {
